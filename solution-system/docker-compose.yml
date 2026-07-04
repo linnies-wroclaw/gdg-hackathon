@@ -24,9 +24,12 @@ services:
   adk-agent:
     build:
       context: ./adg-agents
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
-      GEMINI_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
       MCP_SERVER_URL: http://mcp-server:8000/mcp
     ports:
       - "8081:8081"
@@ -47,6 +50,9 @@ services:
   mcp-server:
     build:
       context: ./mcp-server
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "8000:8000"
     healthcheck:

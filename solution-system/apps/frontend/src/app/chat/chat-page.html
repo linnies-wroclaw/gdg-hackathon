@@ -1,58 +1,405 @@
-<div class="chat">
-  <header class="chat__header">
-    <h1 class="chat__title">Solution system</h1>
-    <p class="chat__subtitle">Agent chat</p>
-  </header>
+<div class="dashboard">
+  <!-- Left Side: Problem & Constraints Inputs -->
+  <aside class="dashboard__sidebar">
+    <header class="dashboard__header">
+      <h1 class="dashboard__title">Solution System</h1>
+      <p class="dashboard__subtitle">Inventive Contradiction Solver</p>
+    </header>
 
-  <main id="main-content" class="chat__main">
-    <div
-      #log
-      class="chat__log"
-      role="log"
-      aria-live="polite"
-      aria-label="Conversation"
-    >
-      @if (chat.messages().length === 0 && !chat.pending()) {
-        <p class="chat__empty">Ask the agent anything to get started.</p>
-      }
-      @for (message of chat.messages(); track $index) {
-        <article class="chat__message chat__message--{{ message.role }}">
-          <span class="sr-only">
-            {{ message.role === 'user' ? 'You' : 'Assistant' }}:
-          </span>
-          <p class="chat__bubble">{{ message.text }}</p>
-        </article>
-      }
-      @if (chat.pending()) {
-        <article class="chat__message chat__message--assistant">
-          <span class="sr-only">Assistant is typing</span>
-          <p class="chat__bubble chat__bubble--thinking" aria-hidden="true">
-            <span class="chat__dot"></span>
-            <span class="chat__dot"></span>
-            <span class="chat__dot"></span>
-          </p>
-        </article>
-      }
-    </div>
+    <form class="dashboard__form" (submit)="onSolveSubmit($event)">
+      <!-- Presets Section -->
+      <div class="form-group">
+        <span class="form-label">Шаблони завдань (Presets)</span>
+        <div class="presets-row">
+          <button
+            type="button"
+            class="preset-btn"
+            (click)="loadPreset('SDG14')"
+            [disabled]="chat.pending()"
+          >
+            🌊 SDG 14 (Морський)
+          </button>
+          <button
+            type="button"
+            class="preset-btn"
+            (click)="loadPreset('SDG12')"
+            [disabled]="chat.pending()"
+          >
+            ♻️ SDG 12 (Екологічний)
+          </button>
+        </div>
+      </div>
 
-    @if (chat.error(); as errorText) {
-      <p class="chat__error" role="alert">{{ errorText }}</p>
-    }
+      <!-- Problem Context -->
+      <div class="form-group">
+        <label for="problem-context" class="form-label">Опис проблеми / сценарій</label>
+        <textarea
+          id="problem-context"
+          class="form-control"
+          rows="4"
+          placeholder="Опишіть ситуацію детально..."
+          [ngModel]="problemContext()"
+          (ngModelChange)="problemContext.set($event)"
+          name="problemContext"
+          [disabled]="chat.pending()"
+        ></textarea>
+      </div>
 
-    <form class="chat__composer" (submit)="onSubmit($event)">
-      <label class="sr-only" for="chat-input">Message the agent</label>
-      <textarea
-        #input
-        id="chat-input"
-        class="chat__input"
-        rows="1"
-        placeholder="Message the agent…"
-        (keydown)="onKeydown($event)"
-        (input)="onInput()"
-      ></textarea>
-      <button class="chat__send" type="submit" [disabled]="chat.pending()">
-        Send
+      <!-- Dynamic Domain Parameters (The Joker Field) -->
+      <div class="form-group">
+        <label class="form-label">Параметри домену (Domain Parameters)</label>
+        <div class="dynamic-params">
+          @for (param of domainParams(); track $index) {
+            <div class="param-row">
+              <input
+                type="text"
+                class="form-control form-control--small"
+                placeholder="Ключ"
+                [ngModel]="param.key"
+                (ngModelChange)="updateParamKey($index, $event)"
+                name="paramKey-{{$index}}"
+                [disabled]="chat.pending()"
+              />
+              <input
+                type="text"
+                class="form-control form-control--small"
+                placeholder="Значення"
+                [ngModel]="param.value"
+                (ngModelChange)="updateParamValue($index, $event)"
+                name="paramVal-{{$index}}"
+                [disabled]="chat.pending()"
+              />
+              <button
+                type="button"
+                class="btn-remove"
+                (click)="removeParam($index)"
+                [disabled]="chat.pending()"
+              >
+                ✕
+              </button>
+            </div>
+          }
+          <button
+            type="button"
+            class="btn-add-param"
+            (click)="addParam()"
+            [disabled]="chat.pending()"
+          >
+            + Додати параметр
+          </button>
+        </div>
+      </div>
+
+      <!-- Constraints Grid -->
+      <div class="form-group">
+        <span class="form-label">Жорсткі обмеження (Hard Constraints)</span>
+        <div class="constraints-grid">
+          @for (constraint of availableConstraints; track constraint) {
+            <button
+              type="button"
+              class="constraint-chip"
+              [class.constraint-chip--selected]="selectedConstraints().includes(constraint)"
+              (click)="toggleConstraint(constraint)"
+              [disabled]="chat.pending()"
+            >
+              {{ constraint }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn--primary btn--large"
+        [disabled]="chat.pending() || !problemContext()"
+      >
+        @if (chat.pending()) {
+          Аналіз та моделювання...
+        } @else {
+          Розпочати вирішення ТРИЗ
+        }
       </button>
     </form>
+  </aside>
+
+  <!-- Right Side: Reasoning Trail Workspace -->
+  <main class="dashboard__workspace" #rightPane>
+    @if (!chat.trail() && !chat.pending()) {
+      <div class="workspace-empty">
+        <div class="workspace-empty__icon">💡</div>
+        <h2 class="workspace-empty__title">Готовий до розв'язання задач</h2>
+        <p class="workspace-empty__text">
+          Задайте опис проблеми, налаштуйте динамічні параметри домену та оберіть жорсткі обмеження ліворуч (або скористайтеся шаблонами), щоб розпочати вирішення ТРИЗ.
+        </p>
+      </div>
+    }
+
+    @if (chat.pending()) {
+      <div class="workspace-loading">
+        <div class="spinner"></div>
+        <h3 class="workspace-loading__title">Виконується R&D аналіз...</h3>
+        
+        <div class="progress-steps-list">
+          @for (step of chat.progressSteps(); track step.step) {
+            <div class="progress-step-item progress-step-item--{{ step.status | lowercase }}">
+              <div class="progress-step-status-icon">
+                @switch (step.status) {
+                  @case ('PENDING') { ⏳ }
+                  @case ('RUNNING') { ⚙️ }
+                  @case ('COMPLETED') { ✅ }
+                  @case ('FAILED') { ❌ }
+                }
+              </div>
+              <div class="progress-step-details">
+                <span class="progress-step-name">
+                  @switch (step.step) {
+                    @case ('GOAL_EXTRACTION') { Крок 1: Визначення цілей проблеми }
+                    @case ('CONTRADICTION_SOLVER') { Крок 2: Аналіз суперечностей TRIZ }
+                    @case ('CANDIDATE_GENERATION') { Крок 3: Паралельна генерація кандидатів }
+                    @case ('EVALUATION') { Крок 4: Оцінка та Reality Check }
+                    @case ('FINAL_RECOMMENDATION') { Крок 5: Остаточні рекомендації ТРИЗ }
+                  }
+                </span>
+                @if (step.error) {
+                  <span class="progress-step-error-msg">{{ step.error }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (chat.trail(); as trail) {
+      <div class="reasoning-trail">
+        <!-- Step 1 -->
+        <section class="step-card">
+          <div class="step-card__header">
+            <span class="step-card__badge">Крок 1</span>
+            <h3 class="step-card__title">Визначення цілей та парсинг проблеми</h3>
+          </div>
+          <div class="step-card__body">
+            <p class="goal-text"><strong>Основна мета:</strong> {{ trail.trail.step1_problem.parsedGoal }}</p>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="step-card">
+          <div class="step-card__header">
+            <span class="step-card__badge">Крок 2</span>
+            <h3 class="step-card__title">Суперечність ТРИЗ</h3>
+          </div>
+          <div class="step-card__body">
+            <div class="contradiction-view">
+              <div class="contradiction-box">
+                <span class="contradiction-box__label">Параметр покращення</span>
+                <span class="contradiction-box__value">{{ trail.trail.step2_contradiction.keyContradiction.improvingParameter }}</span>
+              </div>
+              <div class="contradiction-vs">VS</div>
+              <div class="contradiction-box contradiction-box--worsening">
+                <span class="contradiction-box__label">Параметр погіршення</span>
+                <span class="contradiction-box__value">{{ trail.trail.step2_contradiction.keyContradiction.worseningParameter }}</span>
+              </div>
+            </div>
+            <div class="conflict-list">
+              <strong>Виявлені конфлікти:</strong>
+              <ul>
+                @for (conflict of trail.trail.step2_contradiction.identifiedConflicts; track conflict) {
+                  <li>{{ conflict }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="step-card">
+          <div class="step-card__header">
+            <span class="step-card__badge">Крок 3</span>
+            <h3 class="step-card__title">Згенеровані кандидати рішень</h3>
+          </div>
+          <div class="step-card__body">
+            <div class="tabs">
+              <button
+                type="button"
+                class="tab-btn"
+                [class.tab-btn--active]="activeCategory() === 'SHORT_TERM_EASY'"
+                (click)="setCategory('SHORT_TERM_EASY')"
+              >
+                Швидкі патчі (Low CapEx)
+              </button>
+              <button
+                type="button"
+                class="tab-btn"
+                [class.tab-btn--active]="activeCategory() === 'LONG_TERM_HIGH_IMPACT'"
+                (click)="setCategory('LONG_TERM_HIGH_IMPACT')"
+              >
+                Стратегічні зміни (High CapEx)
+              </button>
+            </div>
+
+            <div class="candidates-list">
+              @for (candidate of trail.trail.step3_candidates.candidates; track candidate.candidateId) {
+                @if (candidate.category === activeCategory()) {
+                  <article class="candidate-item">
+                    <div class="candidate-item__header">
+                      <h4 class="candidate-item__title">{{ candidate.title }}</h4>
+                      <span class="badge badge--triz">{{ candidate.appliedMethodology }}</span>
+                    </div>
+                    <p class="candidate-item__desc"><em>{{ candidate.shortDescription }}</em></p>
+                    <p class="candidate-item__impl">{{ candidate.technicalImplementation }}</p>
+
+                    <!-- Citations Section -->
+                    <div class="citations">
+                      <span class="citations__title">Джерела та наукове обґрунтування (RAG):</span>
+                      <div class="citations__list">
+                        @for (citation of candidate.ragCitations; track citation.sourceId) {
+                          <div class="citation-card">
+                            <button
+                              type="button"
+                              class="citation-card__trigger"
+                              (click)="toggleCitation(citation.sourceId)"
+                            >
+                              <span>📖 {{ citation.title }}</span>
+                              <span class="citation-card__icon">{{ expandedCitations()[citation.sourceId] ? '▼' : '▶' }}</span>
+                            </button>
+                            @if (expandedCitations()[citation.sourceId]) {
+                              <div class="citation-card__content">
+                                <p class="citation-card__excerpt">"{{ citation.relevantExcerpt }}"</p>
+                                <a [href]="citation.urlOrDoi" target="_blank" class="citation-card__link">Читати джерело ↗</a>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </article>
+                }
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="step-card">
+          <div class="step-card__header">
+            <span class="step-card__badge">Крок 4</span>
+            <h3 class="step-card__title">Оцінка та Reality Check</h3>
+          </div>
+          <div class="step-card__body">
+            <div class="evaluations-grid">
+              @for (eval of trail.trail.step4_evaluation.evaluations; track eval.candidateId) {
+                <div class="eval-card">
+                  <div class="eval-card__header">
+                    <h4 class="eval-card__title">{{ eval.candidateId === 'candidate-1' ? 'Кандидат 1' : eval.candidateId === 'candidate-2' ? 'Кандидат 2' : 'Кандидат 3' }}</h4>
+                    <span
+                      class="eval-card__score"
+                      [class.eval-card__score--strong]="eval.score >= 80"
+                      [class.eval-card__score--moderate]="eval.score >= 50 && eval.score < 80"
+                      [class.eval-card__score--weak]="eval.score < 50"
+                    >
+                      {{ eval.score }}/100
+                    </span>
+                  </div>
+                  <div class="eval-card__lists">
+                    <div class="eval-list eval-list--pros">
+                      <h5>Плюси:</h5>
+                      <ul>
+                        @for (pro of eval.pros; track pro) {
+                          <li>{{ pro }}</li>
+                        }
+                      </ul>
+                    </div>
+                    <div class="eval-list eval-list--cons">
+                      <h5>Мінуси:</h5>
+                      <ul>
+                        @for (con of eval.cons; track con) {
+                          <li>{{ con }}</li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+
+                  @if (eval.realityCheckAlerts.length > 0) {
+                    <div class="alerts-section">
+                      <h5>Попередження про обмеження (Reality Check):</h5>
+                      @for (alert of eval.realityCheckAlerts; track $index) {
+                        <div class="alert-box alert-box--{{ alert.severity | lowercase }}">
+                          <div class="alert-box__badge">{{ alert.severity }}</div>
+                          <p class="alert-box__text">
+                            <strong>{{ alert.violatedConstraint }}:</strong> {{ alert.reason }}
+                          </p>
+                          @if (alert.ragCitation; as citation) {
+                            <div class="alert-box__citation">
+                              <em>Джерело: {{ citation.title }} - <a [href]="citation.urlOrDoi" target="_blank">Посилання</a></em>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 5 -->
+        <section class="step-card step-card--highlight">
+          <div class="step-card__header">
+            <span class="step-card__badge step-card__badge--highlight">Рекомендація</span>
+            <h3 class="step-card__title">Остаточний вибір та впровадження</h3>
+          </div>
+          <div class="step-card__body">
+            <div class="winner-hero">
+              <span class="winner-hero__label">РЕКОМЕНДОВАНЕ РІШЕННЯ</span>
+              <h4 class="winner-hero__title">{{ trail.trail.step5_choice.winnerDetails.title }}</h4>
+              <p class="winner-hero__desc">{{ trail.trail.step5_choice.winnerDetails.shortDescription }}</p>
+            </div>
+
+            <div class="explainability-report">
+              <div class="report-block">
+                <h5>Чому це рішення перемогло:</h5>
+                <p>{{ trail.trail.step5_choice.explainabilityReport.whyItWon }}</p>
+              </div>
+              <div class="report-block">
+                <h5>Вирішення суперечності ТРИЗ:</h5>
+                <p>{{ trail.trail.step5_choice.explainabilityReport.howItSolvesContradiction }}</p>
+              </div>
+              <div class="report-block">
+                <h5>Відповідність жорстким обмеженням:</h5>
+                <p>{{ trail.trail.step5_choice.explainabilityReport.complianceWithConstraints }}</p>
+              </div>
+            </div>
+
+            <div class="rejected-alternatives">
+              <h5>Чому відхилено інші варіанти:</h5>
+              <ul>
+                @for (rejected of trail.trail.step5_choice.rejectedAlternativesSummary; track rejected.candidateId) {
+                  <li>
+                    <strong>{{ rejected.candidateId === 'candidate-1' ? 'Кандидат 1' : rejected.candidateId === 'candidate-2' ? 'Кандидат 2' : 'Кандидат 3' }}:</strong>
+                    {{ rejected.rejectionReason }}
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <div class="roadmap">
+              <h5>План впровадження (Next Steps):</h5>
+              <ol class="roadmap__list">
+                @for (step of trail.trail.step5_choice.nextSteps; track step) {
+                  <li class="roadmap__item">{{ step }}</li>
+                }
+              </ol>
+            </div>
+          </div>
+        </section>
+      </div>
+    }
+
+    @if (chat.error(); as errorText) {
+      <p class="dashboard__error" role="alert">{{ errorText }}</p>
+    }
   </main>
 </div>
