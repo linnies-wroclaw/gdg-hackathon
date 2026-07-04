@@ -1,3 +1,8 @@
+# How to run the project
+Simplest way
+
+GOOGLE_GENAI_API_KEY=<your-gemini-api-key> docker compose up --build
+
 # BuildWithAI: TRIZ MCP Agent Platform
 
 BuildWithAI is an intelligent engineering problem-solving platform that uses **TRIZ (Theory of Inventive Problem Solving)** principles to resolve technical contradictions. The system leverages the **Model Context Protocol (MCP)** to expose a rich database of engineering parameters, contradiction matrices, and inventive principles directly to a **Google Gemini-powered agent** running via Google's **Agent Development Kit (ADK)**.
