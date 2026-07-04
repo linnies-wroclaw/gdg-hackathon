@@ -23,6 +23,15 @@ describe('AgentController', () => {
     service.sendMessage.mockResolvedValue({
       sessionId: 'session-123',
       text: 'Use segmentation to isolate the slow path.',
+      trace: {
+        steps: [],
+        causalChain: null,
+        candidates: [],
+        topTrizCandidates: [],
+        topFiveYCandidates: [],
+        evaluation: null,
+        checks: [],
+      },
     });
 
     await expect(
@@ -33,6 +42,15 @@ describe('AgentController', () => {
     ).resolves.toEqual({
       sessionId: 'session-123',
       text: 'Use segmentation to isolate the slow path.',
+      trace: {
+        steps: [],
+        causalChain: null,
+        candidates: [],
+        topTrizCandidates: [],
+        topFiveYCandidates: [],
+        evaluation: null,
+        checks: [],
+      },
     });
 
     expect(service.sendMessage).toHaveBeenCalledWith({

@@ -69,11 +69,10 @@ export class ChatService {
     }
 
     const chat = await this.findChat(chatId, false);
-    const eventStream = await this.agentService.runAgent(
+    const { text: assistantText, trace } = await this.agentService.runTracedMessage(
       chat.adkSessionId,
       message,
     );
-    const assistantText = this.agentService.extractModelText(eventStream);
     const title =
       chat.title === NEW_CHAT_TITLE
         ? this.createTitle(message)
@@ -90,7 +89,7 @@ export class ChatService {
         return this.chatMessageModel.bulkCreate(
           [
             { chatId: chat.id, role: 'user', text: message },
-            { chatId: chat.id, role: 'assistant', text: assistantText },
+            { chatId: chat.id, role: 'assistant', text: assistantText, trace },
           ],
           { transaction },
         );
@@ -151,6 +150,7 @@ export class ChatService {
       role: message.role,
       text: message.text,
       createdAt: message.createdAt.toISOString(),
+      ...(message.trace ? { trace: message.trace } : {}),
     };
   }
 }

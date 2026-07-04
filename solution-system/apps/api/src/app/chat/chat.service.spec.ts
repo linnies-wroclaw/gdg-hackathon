@@ -6,17 +6,34 @@ import {
 import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AgentService } from '../agent.service';
+import { AgentTrace } from '../trace/trace.types';
 import { NEW_CHAT_TITLE } from './chat.constants';
 import { ChatService } from './chat.service';
 import { ChatMessage } from './db/chat-message.model';
 import { Chat } from './db/chat.model';
 
 const iso = (value: string) => new Date(value);
+const stubTrace: AgentTrace = {
+  steps: [
+    {
+      index: 0,
+      agent: 'problem_extractor',
+      type: 'model_output',
+      content: 'doc',
+    },
+  ],
+  causalChain: null,
+  candidates: [],
+  topTrizCandidates: [],
+  topFiveYCandidates: [],
+  evaluation: null,
+  checks: [],
+};
 
 describe('ChatService', () => {
   let service: ChatService;
   let agentService: jest.Mocked<
-    Pick<AgentService, 'createSession' | 'runAgent' | 'extractModelText'>
+    Pick<AgentService, 'createSession' | 'runTracedMessage'>
   >;
   let chatModel: {
     create: jest.Mock;
@@ -32,8 +49,7 @@ describe('ChatService', () => {
   beforeEach(async () => {
     agentService = {
       createSession: jest.fn(),
-      runAgent: jest.fn(),
-      extractModelText: jest.fn(),
+      runTracedMessage: jest.fn(),
     };
     chatModel = {
       create: jest.fn(),
@@ -143,7 +159,7 @@ describe('ChatService', () => {
     await expect(
       service.sendMessage(1, { message: '   ' }),
     ).rejects.toBeInstanceOf(BadRequestException);
-    expect(agentService.runAgent).not.toHaveBeenCalled();
+    expect(agentService.runTracedMessage).not.toHaveBeenCalled();
   });
 
   it('maps missing chats to NotFoundException', async () => {
@@ -161,8 +177,10 @@ describe('ChatService', () => {
       adkSessionId: 'adk-1',
       update: chatModel.update,
     });
-    agentService.runAgent.mockResolvedValue('stream');
-    agentService.extractModelText.mockReturnValue('Answer');
+    agentService.runTracedMessage.mockResolvedValue({
+      text: 'Answer',
+      trace: stubTrace,
+    });
     chatModel.update.mockResolvedValue(undefined);
     messageModel.bulkCreate.mockResolvedValue([
       {
@@ -175,6 +193,7 @@ describe('ChatService', () => {
         id: 11,
         role: 'assistant',
         text: 'Answer',
+        trace: stubTrace,
         createdAt: iso('2026-07-04T10:01:01.000Z'),
       },
     ]);
@@ -195,16 +214,17 @@ describe('ChatService', () => {
           id: 11,
           role: 'assistant',
           text: 'Answer',
+          trace: stubTrace,
           createdAt: '2026-07-04T10:01:01.000Z',
         },
       ],
     });
 
-    expect(agentService.runAgent).toHaveBeenCalledWith('adk-1', 'Question');
+    expect(agentService.runTracedMessage).toHaveBeenCalledWith('adk-1', 'Question');
     expect(messageModel.bulkCreate).toHaveBeenCalledWith(
       [
         { chatId: 1, role: 'user', text: 'Question' },
-        { chatId: 1, role: 'assistant', text: 'Answer' },
+        { chatId: 1, role: 'assistant', text: 'Answer', trace: stubTrace },
       ],
       { transaction: { id: 'tx' } },
     );
@@ -216,7 +236,7 @@ describe('ChatService', () => {
       title: 'Existing',
       adkSessionId: 'adk-1',
     });
-    agentService.runAgent.mockRejectedValue(
+    agentService.runTracedMessage.mockRejectedValue(
       new BadGatewayException('ADK down'),
     );
 

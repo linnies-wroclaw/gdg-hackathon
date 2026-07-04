@@ -21,6 +21,7 @@ import { DatabaseService } from './db.service';
       models: [Chat, ChatMessage],
       autoLoadModels: true,
       synchronize: true,
+      sync: { alter: true },
     }),
     ChatModule,
   ],

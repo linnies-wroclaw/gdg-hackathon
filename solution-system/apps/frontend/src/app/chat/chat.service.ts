@@ -108,6 +108,7 @@ export class ChatService {
         ...messages.filter((entry) => entry.id !== undefined),
         ...response.messages,
       ]);
+      this.errorState.set(null);
       this.updateChatTitle(response.chatId, response.title);
     } catch {
       this.errorState.set('Something went wrong - try again.');

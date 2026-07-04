@@ -1,34 +1,3 @@
-export type ChatRole = 'user' | 'assistant';
-
-export interface ChatMessage {
-  id?: number;
-  role: ChatRole;
-  text: string;
-  createdAt?: string;
-  trace?: AgentTrace;
-}
-
-export interface ChatSummary {
-  id: number;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatDetail extends ChatSummary {
-  messages: ChatMessage[];
-}
-
-export interface SendChatMessageRequest {
-  message: string;
-}
-
-export interface SendChatMessageResponse {
-  chatId: number;
-  title: string;
-  messages: ChatMessage[];
-}
-
 export type TraceStepType = 'model_output' | 'tool_call' | 'tool_response';
 
 export interface TraceStep {
@@ -62,11 +31,13 @@ export interface Feasibility {
   deployable: boolean;
 }
 
+export type CandidateSource = 'triz' | 'fiveY';
+
 export interface CandidateRecord {
   id: string;
   title: string;
   summary: string;
-  source: 'triz' | 'fiveY';
+  source: CandidateSource;
   causal_chain: CausalLink[];
   intervention_index: number;
   rcd: number;

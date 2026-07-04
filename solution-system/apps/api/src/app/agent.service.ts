@@ -8,23 +8,20 @@ import {
   AgentMessageRequestDto,
   AgentMessageResponseDto,
 } from './agent.dto';
+import { runChecks } from './evaluation/conformance';
+import {
+  parseCandidateRecords,
+  scoreCandidate,
+  selectWinner,
+  topCandidatesBySource,
+} from './evaluation/evaluation.engine';
+import { renderReport } from './evaluation/report-renderer';
+import { parseRun } from './trace/trace-parser';
+import { AgentTrace } from './trace/trace.types';
 
 interface AdkSessionResponse {
   id?: string;
   sessionId?: string;
-}
-
-interface AdkEventPart {
-  text?: string;
-}
-
-interface AdkEvent {
-  author?: string;
-  errorCode?: string;
-  errorMessage?: string;
-  content?: {
-    parts?: AdkEventPart[];
-  };
 }
 
 @Injectable()
@@ -42,11 +39,46 @@ export class AgentService {
     }
 
     const sessionId = request.sessionId?.trim() || (await this.createSession());
+    const { text, trace } = await this.runTracedMessage(sessionId, message);
+
+    return { sessionId, text, trace };
+  }
+
+  async runTracedMessage(
+    sessionId: string,
+    message: string,
+  ): Promise<{ text: string; trace: AgentTrace }> {
     const eventStream = await this.runAgent(sessionId, message);
+    const run = parseRun(eventStream);
+    const chain = run.causalChain;
+    const records = parseCandidateRecords(run.candidateRecordsRaw);
+    const canEvaluate = chain !== null && records !== null;
+    const candidates = canEvaluate
+      ? records.map((record) => scoreCandidate(record, chain))
+      : [];
+    const evaluation = canEvaluate ? selectWinner(candidates) : null;
+    const topTrizCandidates = topCandidatesBySource(candidates, 'triz');
+    const topFiveYCandidates = topCandidatesBySource(candidates, 'fiveY');
+    const checks = runChecks(run, records);
+    const failureReason =
+      chain === null
+        ? 'Evaluation unavailable: no valid causal chain.'
+        : records === null
+          ? 'Evaluation unavailable: no valid candidate records.'
+          : undefined;
+    const text = renderReport(evaluation, chain, failureReason);
 
     return {
-      sessionId,
-      text: this.extractModelText(eventStream),
+      text,
+      trace: {
+        steps: run.steps,
+        causalChain: chain,
+        candidates,
+        topTrizCandidates,
+        topFiveYCandidates,
+        evaluation,
+        checks,
+      },
     };
   }
 
@@ -93,54 +125,5 @@ export class AgentService {
     } catch {
       throw new BadGatewayException('Unable to run the ADK agent.');
     }
-  }
-
-  extractModelText(eventStream: string): string {
-    const modelTexts = eventStream
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.startsWith('data:'))
-      .map((line) => line.slice('data:'.length).trim())
-      .filter((payload) => payload && payload !== '[DONE]')
-      .flatMap((payload) => this.parseEventText(payload));
-
-    const text = modelTexts.at(-1);
-
-    if (!text) {
-      throw new BadGatewayException('ADK response did not include model text.');
-    }
-
-    return text;
-  }
-
-  private parseEventText(payload: string): string[] {
-    let event: AdkEvent;
-
-    try {
-      event = JSON.parse(payload) as AdkEvent;
-    } catch {
-      return [];
-    }
-
-    if (event.errorCode || event.errorMessage) {
-      throw new BadGatewayException(this.formatAdkError(event));
-    }
-
-    if (!event.author || event.author === 'user') {
-      return [];
-    }
-
-    return (
-      event.content?.parts
-        ?.map((part) => part.text?.trim())
-        .filter((text): text is string => Boolean(text)) ?? []
-    );
-  }
-
-  private formatAdkError(event: AdkEvent): string {
-    const code = event.errorCode ? ` ${event.errorCode}` : '';
-    const message = event.errorMessage ? `: ${event.errorMessage}` : '';
-
-    return `ADK error${code}${message}`;
   }
 }

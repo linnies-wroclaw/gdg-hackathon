@@ -1,3 +1,5 @@
+import { AgentTrace } from '../trace/trace.types';
+
 export type ChatRole = 'user' | 'assistant';
 
 export interface ChatSummaryDto {
@@ -12,6 +14,7 @@ export interface ChatMessageDto {
   role: ChatRole;
   text: string;
   createdAt: string;
+  trace?: AgentTrace;
 }
 
 export interface ChatDetailDto extends ChatSummaryDto {

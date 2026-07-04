@@ -9,6 +9,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { ChatRole } from '../chat.dto';
+import { AgentTrace } from '../../trace/trace.types';
 import { Chat } from './chat.model';
 
 @Table({
@@ -40,6 +41,12 @@ export class ChatMessage extends Model {
     allowNull: false,
   })
   declare text: string;
+
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+  })
+  declare trace: AgentTrace | null;
 
   @BelongsTo(() => Chat)
   declare chat?: Chat;
