@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Response } from 'express';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 
 describe('ChatController', () => {
   let controller: ChatController;
   let service: jest.Mocked<
-    Pick<ChatService, 'createChat' | 'listChats' | 'getChat' | 'sendMessage'>
+    Pick<ChatService, 'createChat' | 'listChats' | 'getChat' | 'sendMessageStream'>
   >;
 
   beforeEach(async () => {
@@ -13,7 +14,7 @@ describe('ChatController', () => {
       createChat: jest.fn(),
       listChats: jest.fn(),
       getChat: jest.fn(),
-      sendMessage: jest.fn(),
+      sendMessageStream: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,15 +57,17 @@ describe('ChatController', () => {
   });
 
   it('sends a message to a chat by numeric id', async () => {
-    service.sendMessage.mockResolvedValue({
-      chatId: 1,
-      title: 'Chat',
-      messages: [],
-    });
+    service.sendMessageStream.mockResolvedValue(undefined);
+    const mockRes = {
+      setHeader: jest.fn(),
+      flushHeaders: jest.fn(),
+      write: jest.fn(),
+      end: jest.fn(),
+    } as unknown as Response;
 
     await expect(
-      controller.sendMessage('1', { message: 'Hello' }),
-    ).resolves.toMatchObject({ chatId: 1 });
-    expect(service.sendMessage).toHaveBeenCalledWith(1, { message: 'Hello' });
+      controller.sendMessage('1', { message: 'Hello' }, mockRes),
+    ).resolves.toBeUndefined();
+    expect(service.sendMessageStream).toHaveBeenCalledWith(1, { message: 'Hello' }, mockRes);
   });
 });

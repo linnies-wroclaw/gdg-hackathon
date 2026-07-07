@@ -8,7 +8,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: help init install up down logs dev-all dev-mcp dev-agent dev-api dev-frontend test lint clean init-deploy-env deploy-gcloud destroy-gcloud
+.PHONY: help init install up down logs dev dev-all dev-mcp dev-agent dev-api dev-frontend test lint clean init-deploy-env deploy-gcloud destroy-gcloud
 
 # Default target displays the help menu
 help:
@@ -24,6 +24,7 @@ help:
 	@echo "  make logs           - Stream container logs"
 	@echo ""
 	@echo "Local Development Commands (No Docker):"
+	@echo "  make dev            - Run backend DB/MCP in Docker + frontend, API, and agent locally (live reload)"
 	@echo "  make dev-all        - Run frontend and NestJS API gateway concurrently"
 	@echo "  make dev-mcp        - Start python FastMCP TRIZ server"
 	@echo "  make dev-agent      - Start ADK Agent runner"
@@ -69,6 +70,18 @@ down:
 # Docker Compose: follow logs
 logs:
 	docker compose -f solution-system/docker-compose.yml --env-file .env logs -f
+
+# Spin up DB/MCP in docker and run frontend, API, agent locally with live reload
+dev:
+	docker compose -f solution-system/docker-compose.yml up -d postgres mcp-server
+	@echo "Cleaning up any stale processes on ports 8081, 3000, 4200..."
+	@fuser -k 8081/tcp 3000/tcp 4200/tcp 2>/dev/null || true
+	npx --yes concurrently --kill-others \
+		-n "api,frontend,agent" \
+		-c "blue,green,magenta" \
+		"cd solution-system && DB_PORT=$(DB_PORT_HOST) npx nx serve api" \
+		"cd solution-system && npx nx serve frontend" \
+		"cd solution-system/adg-agents && npx adk api_server agent.ts --port 8081 --host 0.0.0.0"
 
 # Start local dev server for both api and frontend
 dev-all:

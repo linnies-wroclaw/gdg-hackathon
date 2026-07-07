@@ -6,6 +6,15 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { AgentService } from '../agent.service';
+import { runChecks } from '../evaluation/conformance';
+import {
+  parseCandidateRecords,
+  scoreCandidate,
+  selectWinner,
+  topCandidatesBySource,
+} from '../evaluation/evaluation.engine';
+import { renderReport } from '../evaluation/report-renderer';
+import { parseRun } from '../trace/trace-parser';
 import { DEMO_USER_ID, NEW_CHAT_TITLE } from './chat.constants';
 import {
   ChatDetailDto,
@@ -103,6 +112,126 @@ export class ChatService {
         this.toMessage(persistedMessage),
       ),
     };
+  }
+
+  async sendMessageStream(
+    chatId: number,
+    request: SendChatMessageRequestDto,
+    res: any,
+  ): Promise<void> {
+    const message = request.message?.trim();
+    if (!message) {
+      throw new BadRequestException('Message is required.');
+    }
+
+    const chat = await this.findChat(chatId, false);
+
+    // Set headers for SSE stream
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const title =
+      chat.title === NEW_CHAT_TITLE
+        ? this.createTitle(message)
+        : chat.title;
+
+    const userMessage = await this.sequelize.transaction(async (transaction) => {
+      if (title !== chat.title) {
+        await chat.update({ title }, { transaction });
+      } else {
+        await chat.update({ updatedAt: new Date() }, { transaction });
+      }
+      return this.chatMessageModel.create(
+        { chatId: chat.id, role: 'user', text: message },
+        { transaction },
+      );
+    });
+
+    // Send an initial event with the user message and updated chat info
+    res.write(`data: ${JSON.stringify({
+      type: 'user_message',
+      chatId: chat.id,
+      title,
+      message: this.toMessage(userMessage),
+    })}\n\n`);
+
+    let buffer = '';
+    try {
+      const stream = await this.agentService.runAgentStream(chat.adkSessionId, message);
+      
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', (chunk: any) => {
+          const textChunk = chunk.toString();
+          buffer += textChunk;
+          // Forward raw SSE chunk to the client
+          res.write(textChunk);
+        });
+
+        stream.on('end', () => {
+          resolve();
+        });
+
+        stream.on('error', (err: any) => {
+          reject(err);
+        });
+      });
+
+      // Stream completed. Process the accumulated buffer.
+      const run = parseRun(buffer);
+      const chain = run.causalChain;
+      const records = parseCandidateRecords(run.candidateRecordsRaw);
+      const canEvaluate = chain !== null && records !== null;
+      const candidates = canEvaluate
+        ? records.map((record) => scoreCandidate(record, chain))
+        : [];
+      const evaluation = canEvaluate ? selectWinner(candidates) : null;
+      const topTrizCandidates = topCandidatesBySource(candidates, 'triz');
+      const topFiveYCandidates = topCandidatesBySource(candidates, 'fiveY');
+      const checks = runChecks(run, records);
+      const failureReason =
+        chain === null
+          ? 'Evaluation unavailable: no valid causal chain.'
+          : records === null
+            ? 'Evaluation unavailable: no valid candidate records.'
+            : undefined;
+      const assistantText = renderReport(evaluation, chain, failureReason);
+
+      const trace = {
+        steps: run.steps,
+        causalChain: chain,
+        candidates,
+        topTrizCandidates,
+        topFiveYCandidates,
+        evaluation,
+        checks,
+      };
+
+      // Persist assistant message in database
+      const assistantMessage = await this.chatMessageModel.create({
+        chatId: chat.id,
+        role: 'assistant',
+        text: assistantText,
+        trace,
+      });
+
+      // Send the final processed result to the client
+      res.write(`data: ${JSON.stringify({
+        type: 'final_result',
+        message: this.toMessage(assistantMessage),
+      })}\n\n`);
+
+    } catch (error: any) {
+      // Stream error event to client
+      const errorMsg = error.message || 'An error occurred during agent run';
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        error: errorMsg,
+      })}\n\n`);
+    } finally {
+      res.end();
+    }
   }
 
   private async findChat(

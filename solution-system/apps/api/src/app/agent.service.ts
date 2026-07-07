@@ -126,4 +126,32 @@ export class AgentService {
       throw new BadGatewayException('Unable to run the ADK agent.');
     }
   }
+
+  async runAgentStream(sessionId: string, message: string): Promise<any> {
+    try {
+      const response = await axios.post<any>(
+        `${this.adkAgentUrl}/run_sse`,
+        {
+          appName: 'agent',
+          userId: 'user',
+          sessionId,
+          newMessage: {
+            role: 'user',
+            parts: [{ text: message }],
+          },
+        },
+        {
+          headers: {
+            Accept: 'text/event-stream',
+          },
+          responseType: 'stream',
+        },
+      );
+
+      return response.data;
+    } catch {
+      throw new BadGatewayException('Unable to run the ADK agent.');
+    }
+  }
 }
+
