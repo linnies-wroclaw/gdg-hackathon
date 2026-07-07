@@ -1,0 +1,47 @@
+# 🗺️ Release Roadmap
+
+This document outlines the evolutionary roadmap of the Maritime R&D AI Assistant, mapping the implemented core functionality to future iterations.
+
+---
+
+## 📍 Current State: Release 1 (MVP - Causal-TRIZ Core)
+
+Instead of a basic mockup (Release 0), the current codebase implements a fully working, integrated **Release 1 (MVP Core)**. It fulfills all the mandatory hackathon requirements using a real, inspectable multi-agent execution pipeline.
+
+### Implemented Features
+
+- **Problem Framing:** Single-shot extraction of the core problem, key constraints, downstream symptoms, and success criteria (`problemExtractorAgent`).
+- **Causal Discovery (5 Whys Loop):** A `LoopAgent` executes `whyStepAgent` up to 5 times to discover the root cause and build a validated causal chain.
+- **Candidate Generation:**
+  - **FiveY Solver:** Generates 3–5 candidates acting directly on the causal chain.
+  - **TRIZ Solver:** Uses the Python MCP server to query parameters and the contradiction matrix, generating 3–5 inventive candidates.
+- **Pareto Evaluation Engine:** A mathematical NestJS backend engine that evaluates candidates on a 2D plane:
+  - **X-Axis (Targeting Depth):** Based on root cause depth (rcd) and causal chain validity (ccv).
+  - **Y-Axis (Ideality/Quality):** Derived from TRIZ benefits, costs, harms, and contradiction resolution.
+  - **Frontier Selection:** Filters candidates using Pareto optimality and gates ($X \ge 60, Y \ge 60$).
+- **Explainability:** Renders a structured markdown report displaying the decision verdict, the winner's details, the causal chain with the intervention point, and a full candidate plane comparison table.
+
+---
+
+## 🚀 Release 2: Interactive Loop & Parallel Solvers
+
+This phase focuses on enhancing user control and boosting performance.
+
+### Release 2 Focus Areas
+
+- **Interactive Problem Definition:** Implement the clarification loop. If the extracted problem is ambiguous, the agent prompts the user with clarifying questions before launching solvers.
+- **Goal & Constraint Toggles:** Allow users to define what to focus on and what constraints to ignore.
+- **Parallel Generation:** Move away from sequential execution in `SequentialAgent` to running candidate research streams concurrently to reduce SSE response time.
+- **Qualitative Evaluator:** Augment the mathematical engine with an LLM evaluator that groups similar solutions and automatically lists qualitative pros and cons.
+
+---
+
+## 🌐 Release 3: Dynamic Tool Routing & Enterprise
+
+This phase introduces enterprise-grade versatility and reporting.
+
+### Release 3 Focus Areas
+
+- **Dynamic Tool Registry:** Match problem type to specialized research tools (e.g., patent databases, chemistry manuals) and assign them to specific candidate agents dynamically.
+- **Alternative Explanation:** Detail exactly why rejected alternatives failed to pass the gates or were dominated on the Pareto frontier.
+- **Enterprise Export:** Define concrete implementation next steps and export data to PDF or Excel.

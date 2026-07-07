@@ -47,7 +47,10 @@ The application is structured as a decoupled multi-service system:
 gdg-hackathon/
 ├── docs/                      # Project documentation and specifications
 │   ├── agent_workflow.md      # Flowchart detailing the agent reasoning and execution flow by releases
+│   ├── evaluation_criteria.md # Hackathon evaluation criteria and milestones
+│   ├── hackathon_task.md      # Hackathon task description and inventive challenges (SDGs)
 │   ├── problem_statement_canvas.md # Canvas defining Context, Problem, and SDG 14 Alignment
+│   ├── release_roadmap.md     # Roadmap of current implemented core and future releases
 │   ├── user_story_map.md      # User Story Map, persona, and hackathon releases
 │   └── superpowers/
 │       ├── specs/             # Specs for Frontend, Proxy, Persistence & TRIZ
