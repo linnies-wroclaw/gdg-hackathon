@@ -71,6 +71,11 @@ services:
   mcp-server:
     build:
       context: ./mcp-server
+    environment:
+      MCP_HOST: ${MCP_HOST:-0.0.0.0}
+      MCP_PORT: ${MCP_PORT:-8000}
+      MCP_NAME: ${MCP_NAME:-triz-mcp-server}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
     ports:
       - "8000:8000"
     healthcheck:

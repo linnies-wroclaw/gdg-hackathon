@@ -8,7 +8,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: help init install up down logs dev-all dev-mcp dev-agent dev-api dev-frontend test lint clean
+.PHONY: help init install up down logs dev-all dev-mcp dev-agent dev-api dev-frontend test lint clean init-deploy-env deploy-gcloud destroy-gcloud
 
 # Default target displays the help menu
 help:
@@ -34,6 +34,11 @@ help:
 	@echo "  make test           - Run backend and frontend unit tests"
 	@echo "  make lint           - Lint the monorepo codebase"
 	@echo "  make clean          - Remove builds, caches, and node_modules"
+	@echo ""
+	@echo "Google Cloud Deployment:"
+	@echo "  make init-deploy-env - Copy deployment/gcloud/env.example to deployment/gcloud/.env"
+	@echo "  make deploy-gcloud   - Deploy the full Docker Compose stack to Google Cloud"
+	@echo "  make destroy-gcloud  - Destroy Google Cloud resources created by deploy.sh"
 	@echo "--------------------------------------------------"
 
 # Initialize environment configuration files
@@ -98,3 +103,17 @@ clean:
 	@echo "Cleaning up dist, tmp, and caches..."
 	rm -rf solution-system/dist solution-system/tmp solution-system/.nx
 	@echo "To delete node_modules run: rm -rf solution-system/node_modules solution-system/adg-agents/node_modules"
+
+# Initialize Google Cloud deployment environment file
+init-deploy-env:
+	@echo "Initializing Google Cloud deployment env file..."
+	@cp -n deployment/gcloud/env.example deployment/gcloud/.env || true
+	@echo "Done. Edit deployment/gcloud/.env before running make deploy-gcloud."
+
+# Deploy the complete Docker Compose application to Google Cloud
+deploy-gcloud:
+	bash deploy.sh --env-file deployment/gcloud/.env
+
+# Destroy Google Cloud resources created by the deployment scripts
+destroy-gcloud:
+	bash destroy.sh --env-file deployment/gcloud/.env
