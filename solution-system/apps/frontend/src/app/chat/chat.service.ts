@@ -149,39 +149,72 @@ export class ChatService {
       };
 
       const renderProgress = () => {
-        const getStepHtml = (label: string, key: string) => {
+        const getNodeHtml = (label: string, key: string) => {
           const status = stepsStatus[key];
-          let statusClass = '';
-          let badgeClass = '';
+          let statusClass = 'agent-graph__node--pending';
           let badgeLabel = 'Waiting';
 
           if (status === 'active') {
-            statusClass = 'agent-progress__step--active';
-            badgeClass = 'agent-progress__badge--running';
+            statusClass = 'agent-graph__node--active';
             badgeLabel = 'Running';
           } else if (status === 'done') {
-            statusClass = 'agent-progress__step--done';
-            badgeClass = 'agent-progress__badge--done';
+            statusClass = 'agent-graph__node--done';
             badgeLabel = 'Done';
-          } else {
-            badgeClass = 'agent-progress__badge--waiting';
           }
 
-          return `<div class="agent-progress__step ${statusClass}">` +
-            `<span>${label}</span>` +
-            `<span class="agent-progress__badge ${badgeClass}">${badgeLabel}</span>` +
+          return `<div class="agent-graph__node ${statusClass}">` +
+            `<div class="agent-graph__node-header">` +
+            `<span class="agent-graph__node-dot"></span>` +
+            `<span class="agent-graph__node-title">${label}</span>` +
+            `</div>` +
+            `<span class="agent-graph__node-badge">${badgeLabel}</span>` +
             `</div>`;
         };
 
-        return `<div class="agent-progress">` +
-          `<h3 class="agent-progress__title">Orchestrating Solution Engineering Agents...</h3>` +
-          `<div class="agent-progress__steps">` +
-          `${getStepHtml('Problem Extractor Agent', 'problem_extractor')}` +
-          `${getStepHtml('5-Whys Analysis Agent', 'why_step')}` +
-          `${getStepHtml('TRIZ Solver Agent', 'triz_solver')}` +
-          `${getStepHtml('5-Whys Solver Agent', 'fiveY_solver')}` +
+        const getConnectorClass = (prevKey: string, nextKey: string) => {
+          const prevStatus = stepsStatus[prevKey];
+          const nextStatus = stepsStatus[nextKey];
+          if (nextStatus === 'active' || nextStatus === 'done') {
+            return 'agent-graph__connector--active';
+          }
+          if (prevStatus === 'done') {
+            return 'agent-graph__connector--done';
+          }
+          return '';
+        };
+
+        const getSplitClass = (parentKey: string, childKey: string) => {
+          const parentStatus = stepsStatus[parentKey];
+          const childStatus = stepsStatus[childKey];
+          if (childStatus === 'active' || childStatus === 'done') {
+            return 'agent-graph__line--active';
+          }
+          if (parentStatus === 'done') {
+            return 'agent-graph__line--done';
+          }
+          return '';
+        };
+
+        return `<div class="agent-graph">` +
+          `<h3 class="agent-graph__title">Orchestrating Solution Engineering Agents...</h3>` +
+          `<div class="agent-graph__nodes">` +
+          `${getNodeHtml('Problem Extractor Agent', 'problem_extractor')}` +
+          `<div class="agent-graph__connector ${getConnectorClass('problem_extractor', 'why_step')}"></div>` +
+          `${getNodeHtml('5-Whys Analysis Loop', 'why_step')}` +
+          `<div class="agent-graph__split">` +
+          `<div class="agent-graph__split-line-top ${getConnectorClass('why_step', 'triz_solver') || getConnectorClass('why_step', 'fiveY_solver')}"></div>` +
+          `<div class="agent-graph__split-bar ${getConnectorClass('why_step', 'triz_solver') || getConnectorClass('why_step', 'fiveY_solver')}"></div>` +
+          `<div class="agent-graph__split-lines-down">` +
+          `<div class="agent-graph__split-line-left ${getSplitClass('why_step', 'triz_solver')}"></div>` +
+          `<div class="agent-graph__split-line-right ${getSplitClass('why_step', 'fiveY_solver')}"></div>` +
           `</div>` +
-          `<p class="agent-progress__footer">Please stand by, generating TRIZ & 5-Whys evaluation report...</p>` +
+          `</div>` +
+          `<div class="agent-graph__parallel-row">` +
+          `${getNodeHtml('TRIZ Solver Agent', 'triz_solver')}` +
+          `${getNodeHtml('5-Whys Solver Agent', 'fiveY_solver')}` +
+          `</div>` +
+          `</div>` +
+          `<p class="agent-graph__footer">Please stand by, generating TRIZ & 5-Whys evaluation report...</p>` +
           `</div>`;
       };
 
