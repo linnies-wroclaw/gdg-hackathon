@@ -8,7 +8,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: help init install up down logs dev dev-all dev-mcp dev-agent dev-api dev-frontend test lint clean init-deploy-env deploy-gcloud destroy-gcloud
+.PHONY: help init install up down logs dev dev-all dev-mcp dev-agent dev-api dev-frontend test lint lint-tokens clean init-deploy-env deploy-gcloud destroy-gcloud
 
 # Default target displays the help menu
 help:
@@ -110,6 +110,10 @@ test:
 # Lint NestJS API and Angular projects
 lint:
 	cd solution-system && npm run lint
+
+# Lint design tokens only
+lint-tokens:
+	cd solution-system && npm run lint:tokens
 
 # Clean build outputs and caches
 clean:
