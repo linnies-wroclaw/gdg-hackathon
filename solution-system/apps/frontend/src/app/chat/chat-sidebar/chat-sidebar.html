@@ -18,13 +18,16 @@
     <p class="chat__empty-list">No saved chats yet.</p>
   }
 
-  @for (item of chat.chats(); track item.id) {
+  @for (item of chat.chats(); track item.id; let idx = $index) {
     <button
+      #chatButton
       class="chat__list-item"
       type="button"
       [class.chat__list-item--active]="item.id === chat.selectedChatId()"
       [attr.aria-current]="item.id === chat.selectedChatId() ? 'page' : null"
       [disabled]="chat.pending()"
+      [attr.tabindex]="isFocusable(item.id, idx) ? 0 : -1"
+      (keydown)="onKeydown($event, idx)"
       (click)="selectChat(item.id)"
     >
       {{ item.title }}
