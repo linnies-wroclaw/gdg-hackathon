@@ -10,6 +10,12 @@ import { ChatService } from '../chat.service';
   selector: 'app-chat-sidebar',
   standalone: true,
   templateUrl: './chat-sidebar.html',
+  styleUrl: './chat-sidebar.scss',
+  host: {
+    'role': 'complementary',
+    'aria-label': 'Conversations',
+    'class': 'chat__sidebar',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatSidebarComponent {
