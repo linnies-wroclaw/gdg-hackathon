@@ -260,6 +260,25 @@
   }
 }
 
+.chat__nav-tip {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+
+  kbd {
+    display: inline-block;
+    padding: 0.1rem 0.3rem;
+    font-family: inherit;
+    font-size: 10px;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+    margin-inline: 1px;
+  }
+}
+
 @media (max-width: 48rem) {
   .chat {
     grid-template-columns: 1fr;

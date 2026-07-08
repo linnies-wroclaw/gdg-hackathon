@@ -5,7 +5,11 @@
     (focusComposer)="focusInput()"
   ></app-chat-sidebar>
 
-  <section class="chat__panel" aria-label="Selected conversation">
+  <section
+    class="chat__panel"
+    aria-label="Selected conversation"
+    (keydown)="onPanelKeydown($event)"
+  >
     <header class="chat__header">
       <h2 class="chat__panel-title">
         @if (chat.selectedChatId()) {
@@ -62,6 +66,15 @@
           Send
         </button>
       </form>
+
+      <p class="chat__nav-tip">
+        <strong>Клавіатурна навігація:</strong>
+        <kbd>Tab</kbd> / <kbd>↑</kbd><kbd>↓</kbd> Сайдбар |
+        <kbd>PgUp</kbd><kbd>PgDn</kbd> Пропустити 5 |
+        <kbd>Home</kbd><kbd>End</kbd> Початок/Кінець |
+        <kbd>→</kbd> Перейти до чату |
+        <kbd>←</kbd> Повернутись до сайдбару
+      </p>
     </main>
   </section>
 </div>

@@ -49,10 +49,23 @@ export class ChatPage {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendCurrent();
-    } else if (
-      event.key === 'ArrowLeft' &&
-      this.inputRef().nativeElement.selectionStart === 0
-    ) {
+    }
+  }
+
+  protected onPanelKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowLeft') {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl instanceof HTMLTextAreaElement ||
+        activeEl instanceof HTMLInputElement;
+
+      if (isInput) {
+        const textEl = activeEl as HTMLTextAreaElement | HTMLInputElement;
+        if (textEl.selectionStart !== 0) {
+          return;
+        }
+      }
+
       event.preventDefault();
       this.sidebarRef().focusActiveItem();
     }
