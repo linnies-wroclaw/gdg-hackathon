@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import axios from 'axios';
 import {
@@ -18,6 +19,7 @@ import {
 import { renderReport } from './evaluation/report-renderer';
 import { parseRun } from './trace/trace-parser';
 import { AgentTrace } from './trace/trace.types';
+import { correlationStorage } from './logging/correlation-storage';
 
 interface AdkSessionResponse {
   id?: string;
@@ -26,8 +28,14 @@ interface AdkSessionResponse {
 
 @Injectable()
 export class AgentService {
+  private readonly logger = new Logger(AgentService.name);
   private readonly adkAgentUrl =
     process.env.ADK_AGENT_URL ?? 'http://localhost:8081';
+
+  private getTraceHeaders(): Record<string, string> {
+    const correlationId = correlationStorage.getStore();
+    return correlationId ? { 'x-correlation-id': correlationId } : {};
+  }
 
   async sendMessage(
     request: AgentMessageRequestDto,
@@ -48,6 +56,7 @@ export class AgentService {
     sessionId: string,
     message: string,
   ): Promise<{ text: string; trace: AgentTrace }> {
+    this.logger.log(`Starting non-streamed agent run for session: ${sessionId}`);
     const eventStream = await this.runAgent(sessionId, message);
     const run = parseRun(eventStream);
     const chain = run.causalChain;
@@ -68,6 +77,8 @@ export class AgentService {
           : undefined;
     const text = renderReport(evaluation, chain, failureReason);
 
+    this.logger.log(`Non-streamed agent run completed. Candidates count: ${candidates.length}`);
+
     return {
       text,
       trace: {
@@ -83,10 +94,14 @@ export class AgentService {
   }
 
   async createSession(): Promise<string> {
+    this.logger.log('Creating new ADK agent session...');
     try {
       const response = await axios.post<AdkSessionResponse>(
         `${this.adkAgentUrl}/apps/agent/users/user/sessions`,
         {},
+        {
+          headers: this.getTraceHeaders(),
+        },
       );
       const sessionId = response.data.id ?? response.data.sessionId;
 
@@ -94,13 +109,16 @@ export class AgentService {
         throw new Error('ADK session response did not include a session id.');
       }
 
+      this.logger.log(`Successfully created ADK session: ${sessionId}`);
       return sessionId;
-    } catch {
+    } catch (error: any) {
+      this.logger.error(`Failed to create ADK session: ${error.message}`);
       throw new BadGatewayException('Unable to create an ADK session.');
     }
   }
 
   async runAgent(sessionId: string, message: string): Promise<string> {
+    this.logger.log(`Executing ADK agent runner for session: ${sessionId}`);
     try {
       const response = await axios.post<string>(
         `${this.adkAgentUrl}/run_sse`,
@@ -116,18 +134,21 @@ export class AgentService {
         {
           headers: {
             Accept: 'text/event-stream',
+            ...this.getTraceHeaders(),
           },
           responseType: 'text',
         },
       );
 
       return response.data;
-    } catch {
+    } catch (error: any) {
+      this.logger.error(`ADK agent run execution failed: ${error.message}`);
       throw new BadGatewayException('Unable to run the ADK agent.');
     }
   }
 
   async runAgentStream(sessionId: string, message: string): Promise<any> {
+    this.logger.log(`Initiating streaming ADK agent run for session: ${sessionId}`);
     try {
       const response = await axios.post<any>(
         `${this.adkAgentUrl}/run_sse`,
@@ -143,13 +164,15 @@ export class AgentService {
         {
           headers: {
             Accept: 'text/event-stream',
+            ...this.getTraceHeaders(),
           },
           responseType: 'stream',
         },
       );
 
       return response.data;
-    } catch {
+    } catch (error: any) {
+      this.logger.error(`ADK agent stream initiation failed: ${error.message}`);
       throw new BadGatewayException('Unable to run the ADK agent.');
     }
   }

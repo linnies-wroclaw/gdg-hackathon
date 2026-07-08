@@ -52,7 +52,9 @@ export function parseRun(eventStream: string): ParsedRun {
 
   for (const event of readEvents(eventStream)) {
     if (event.errorCode || event.errorMessage) {
-      throw new BadGatewayException(formatAdkError(event));
+      if (event.errorCode !== 'STOP' && event.errorMessage !== 'STOP') {
+        throw new BadGatewayException(formatAdkError(event));
+      }
     }
 
     if (!event.author || event.author === 'user') {

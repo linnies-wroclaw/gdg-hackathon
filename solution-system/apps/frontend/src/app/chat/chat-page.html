@@ -69,88 +69,11 @@
                 [innerHTML]="message.text | markdown"
               ></div>
               @if (hasTraceView(message.trace)) {
-                <section class="trace" aria-label="Evaluated solution trace">
-                  <details class="trace__details" open>
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Targeting x Quality map</span>
-                      <span class="trace__summary-note">Gate lines are fixed at X 60 and Y 60.</span>
-                    </summary>
-                    <div class="trace-plane">
-                      <canvas
-                        #planeCanvas
-                        width="520"
-                        height="220"
-                        [attr.data-trace-index]="$index"
-                        aria-label="Candidate XY evaluation chart"
-                      ></canvas>
-                    </div>
-                  </details>
-                  <details class="trace__details">
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Top TRIZ solutions</span>
-                    </summary>
-                    <div class="trace__group">
-                      <div class="trace__cards">
-                        @for (candidate of message.trace.topTrizCandidates; track candidate.record.id) {
-                          <article class="trace-card">
-                            <div class="trace-card__head">
-                              <span class="trace-card__id">{{ candidate.record.id }}</span>
-                              <h4>{{ candidate.record.title }}</h4>
-                            </div>
-                            <p>{{ candidate.record.summary }}</p>
-                            <dl class="trace-card__metrics">
-                              <div>
-                                <dt>X</dt>
-                                <dd>{{ scoreLabel(candidate.x) }}</dd>
-                              </div>
-                              <div>
-                                <dt>Y</dt>
-                                <dd>{{ scoreLabel(candidate.y) }}</dd>
-                              </div>
-                              <div>
-                                <dt>dc</dt>
-                                <dd>{{ percentLabel(candidate.dc) }}</dd>
-                              </div>
-                            </dl>
-                          </article>
-                        }
-                      </div>
-                    </div>
-                  </details>
-
-                  <details class="trace__details">
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Top Five-Whys solutions</span>
-                    </summary>
-                    <div class="trace__group">
-                      <div class="trace__cards">
-                        @for (candidate of message.trace.topFiveYCandidates; track candidate.record.id) {
-                          <article class="trace-card trace-card--fivey">
-                            <div class="trace-card__head">
-                              <span class="trace-card__id">{{ candidate.record.id }}</span>
-                              <h4>{{ candidate.record.title }}</h4>
-                            </div>
-                            <p>{{ candidate.record.summary }}</p>
-                            <dl class="trace-card__metrics">
-                              <div>
-                                <dt>X</dt>
-                                <dd>{{ scoreLabel(candidate.x) }}</dd>
-                              </div>
-                              <div>
-                                <dt>Y</dt>
-                                <dd>{{ scoreLabel(candidate.y) }}</dd>
-                              </div>
-                              <div>
-                                <dt>dc</dt>
-                                <dd>{{ percentLabel(candidate.dc) }}</dd>
-                              </div>
-                            </dl>
-                          </article>
-                        }
-                      </div>
-                    </div>
-                  </details>
-                </section>
+                @defer (on viewport) {
+                  <app-solution-trace [trace]="message.trace"></app-solution-trace>
+                } @placeholder {
+                  <div class="trace-placeholder">Loading trace details...</div>
+                }
               }
             } @else {
               <p class="chat__bubble">{{ message.text }}</p>

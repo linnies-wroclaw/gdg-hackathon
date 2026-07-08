@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, Logger } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
@@ -8,6 +8,7 @@ import { ChatModule } from './chat/chat.module';
 import { ChatMessage } from './chat/db/chat-message.model';
 import { Chat } from './chat/db/chat.model';
 import { DatabaseService } from './db.service';
+import { CorrelationMiddleware } from './logging/correlation.middleware';
 
 @Module({
   imports: [
@@ -22,10 +23,15 @@ import { DatabaseService } from './db.service';
       autoLoadModels: true,
       synchronize: true,
       sync: { alter: true },
+      logging: (sql) => new Logger('Sequelize').log(sql),
     }),
     ChatModule,
   ],
   controllers: [AppController, AgentController],
   providers: [AppService, AgentService, DatabaseService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationMiddleware).forRoutes('*');
+  }
+}

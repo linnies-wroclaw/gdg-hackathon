@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -28,6 +29,8 @@ import { Chat } from './db/chat.model';
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     @InjectModel(Chat) private readonly chatModel: typeof Chat,
     @InjectModel(ChatMessage)
@@ -124,6 +127,7 @@ export class ChatService {
       throw new BadRequestException('Message is required.');
     }
 
+    this.logger.log(`Handling sendMessageStream for chatId: ${chatId}`);
     const chat = await this.findChat(chatId, false);
 
     // Set headers for SSE stream
@@ -149,6 +153,8 @@ export class ChatService {
       );
     });
 
+    this.logger.log(`User message persisted with ID: ${userMessage.id}`);
+
     // Send an initial event with the user message and updated chat info
     res.write(`data: ${JSON.stringify({
       type: 'user_message',
@@ -159,6 +165,7 @@ export class ChatService {
 
     let buffer = '';
     try {
+      this.logger.log(`Starting ADK agent stream. Session ID: ${chat.adkSessionId}`);
       const stream = await this.agentService.runAgentStream(chat.adkSessionId, message);
       
       await new Promise<void>((resolve, reject) => {
@@ -178,6 +185,8 @@ export class ChatService {
         });
       });
 
+      this.logger.log(`ADK stream completed. Processing response buffer (${buffer.length} chars)...`);
+
       // Stream completed. Process the accumulated buffer.
       const run = parseRun(buffer);
       const chain = run.causalChain;
@@ -190,6 +199,10 @@ export class ChatService {
       const topTrizCandidates = topCandidatesBySource(candidates, 'triz');
       const topFiveYCandidates = topCandidatesBySource(candidates, 'fiveY');
       const checks = runChecks(run, records);
+      
+      this.logger.log(`Causal chain valid: ${chain !== null}, Candidates parsed: ${records?.length ?? 0}`);
+      this.logger.log(`Conformance checks passed: ${checks.filter(c => c.passed).length}/${checks.length}`);
+
       const failureReason =
         chain === null
           ? 'Evaluation unavailable: no valid causal chain.'
@@ -209,6 +222,7 @@ export class ChatService {
       };
 
       // Persist assistant message in database
+      this.logger.log(`Persisting assistant message for chatId: ${chat.id}`);
       const assistantMessage = await this.chatMessageModel.create({
         chatId: chat.id,
         role: 'assistant',
@@ -223,8 +237,9 @@ export class ChatService {
       })}\n\n`);
 
     } catch (error: any) {
-      // Stream error event to client
       const errorMsg = error.message || 'An error occurred during agent run';
+      this.logger.error(`Error in sendMessageStream for chatId ${chatId}: ${errorMsg}`, error.stack);
+      // Stream error event to client
       res.write(`data: ${JSON.stringify({
         type: 'error',
         error: errorMsg,

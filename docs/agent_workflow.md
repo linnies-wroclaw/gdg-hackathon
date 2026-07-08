@@ -16,111 +16,103 @@ flowchart TD
     A([Start]) --> B[User submits problem]
 
     subgraph r2 ["Release 2: Interactive Loop"]
-        C[Define problem]
-        C1[Define user goal]
-        C2[Define what to focus on]
-        C3[Define what to ignore]
-        D{Is problem clear enough?}
-        E[Ask clarification questions]
+        C[Clarification Loop]
+        C1[Toggle Goals & Constraints]
+        C2[Ambiguity Checker]
         
         C --> C1
         C1 --> C2
-        C2 --> C3
-        C3 --> D
     end
 
-    subgraph r1 ["Release 1: MVP Core - TRIZ & Execution"]
-        F[Identify contradictions]
-        F1[Find conflicts and trade-offs]
-        F2[Define key contradiction]
+    subgraph r1 ["Release 1: MVP Core - Framing & Causal Loop"]
+        D[Problem Extractor Agent]
+        E[5-Whys Analysis Loop]
+        E1[Why Step Agent]
         
-        F --> F1
-        F1 --> F2
+        D --> E
+        E --> E1
     end
 
-    subgraph r3 ["Release 3: Dynamic Routing"]
-        G[Define research tools]
-        G1[Select tools based on problem type]
-        G2[Assign tools to candidate agents]
-        G3[Define tool purpose and expected output]
+    subgraph r3 ["Release 3: Dynamic Tool Routing"]
+        G[Dynamic Tool Registry]
+        G1[Patent DB Search]
+        G2[Material Spec Lookup]
         
         G --> G1
         G1 --> G2
-        G2 --> G3
     end
 
-    subgraph r1_parallel ["Release 1: MVP Core - Parallel Generation"]
-        H[Run all solution candidates in parallel]
-        H1[Candidate A researches solution path]
-        H2[Candidate B researches solution path]
-        H3[Candidate C researches solution path]
-        H4[Candidate N researches solution path]
+    subgraph r2_parallel ["Release 2: Parallel Generation"]
+        H[Parallel Solver Coordinator]
+        H1[5-Whys Solver Agent]
+        H2[TRIZ Solver Agent]
         
         H --> H1
         H --> H2
-        H -.-> H3
-        H -.-> H4
     end
 
     subgraph r2_eval ["Release 2: Deep Evaluation"]
-        I[Evaluate candidates]
-        I1[Group similar solutions]
-        I2[List pros and cons]
-        I3[Score each candidate]
+        I[Deep Evaluation Engine]
+        I1[Group Similar Solutions]
+        I2[Qualitative Pros/Cons LLM]
         
-        I -.-> I1
-        I1 -.-> I2
-        I2 -.-> I3
+        I --> I1
+        I1 --> I2
     end
 
-    subgraph r1_explain ["Release 1: MVP Core - Explainability"]
-        I4[Select best candidates]
-        J[Choose final solution]
-        J1[Explain why it is best]
+    subgraph r1_evaluate ["Release 1: MVP Core - Pareto & Verdict"]
+        J[Pareto Evaluation Engine]
+        J1[Filter optimality gates]
+        J2[Render Explainability Report]
         
-        I4 --> J
         J --> J1
+        J1 --> J2
     end
 
     subgraph r3_export ["Release 3: Enterprise Export"]
-        J2[Explain rejected alternatives]
-        J3[Define next steps]
+        K[Enterprise Export]
+        K1[Explain Rejected Alternatives]
+        K2[Export to PDF/Excel]
         
-        J2 -.-> J3
+        K --> K1
+        K1 --> K2
     end
 
-    K([End])
+    L([End])
 
     %% Connections between subgraphs
     B -.-> C
-    B --> F
-    D -.->|No| E
-    E -.-> B
-    D -.->|Yes| F
-    F2 -.-> G
-    F2 -->|Hardcoded RAG Tool| H
-    G3 -.-> H
+    B --> D
+    C2 -.->|Yes| D
+    C2 -.->|No| C
     
+    E1 -->|Hardcoded RAG Tool| J
+    E1 -.-> G
+    G2 -.-> H
+    
+    %% Release 1 (sequential path)
+    E1 --> H1
+    H1 --> H2
+    H2 --> J
+
+    %% Release 2 (parallel path)
+    E1 -.-> H
     H1 --> I
     H2 --> I
-    H3 -.-> I
-    H4 -.-> I
+    I --> J
     
-    I --> I4
-    I3 -.-> I4
-    
-    J1 -.-> J2
-    J1 --> K
-    J3 -.-> K
+    J2 -.-> K
+    J2 --> L
+    K2 -.-> L
 
     %% Styling configurations for visual coding
     classDef mvp fill:#e1f5fe,stroke:#3182ce,stroke-width:2px,color:#2b6cb0
     classDef rel2 fill:#fff5f5,stroke:#dd6b20,stroke-width:2px,stroke-dasharray: 5 5,color:#c05621
     classDef rel3 fill:#f0fff4,stroke:#38a169,stroke-width:2px,stroke-dasharray: 5 5,color:#2f855a
     
-    class B,F,F1,F2,H,H1,H2,I4,J,J1 mvp
-    class C,C1,C2,C3,D,E,I,I1,I2,I3 rel2
-    class G,G1,G2,G3,J2,J3 rel3
+    class B,D,E,E1,H1,H2,J,J1,J2 mvp
+    class C,C1,C2,H,I,I1,I2 rel2
+    class G,G1,G2,K,K1,K2 rel3
 ```
 
 ---
@@ -128,15 +120,17 @@ flowchart TD
 ## 🛠️ Step-by-Step Pipeline Breakdown
 
 ### 📦 Release 1: MVP Core (Blue Items)
-In the initial release, the system operates as a direct execution pipeline focusing on the primary contradiction:
-1.  **Contradiction Identification**: The user submits a problem (e.g. *hull breach*), and the agent immediately analyzes it to isolate technical conflicts (e.g. *reducing flow rate* vs. *increasing weight*) and define the key TRIZ contradiction.
-2.  **Hardcoded RAG & Parallel Generation**: The agent triggers parallel candidate generation branches (Candidate A, B, etc.). Each candidate uses a hardcoded RAG tool to search parameters and principles.
-3.  **Explainability Selection**: The best concepts are selected, the final solution is recommended, and the system outputs an explanation detailing *why* it was chosen alongside its RAG citations and TRIZ principles.
+In the initial release, the system operates as a direct execution pipeline focusing on problem framing and causal analysis:
+1.  **Problem Framing (Problem Extractor Agent)**: The user submits a problem (e.g. *hull breach*), and the agent extracts key variables, constraints, symptoms, and success metrics.
+2.  **Causal Discovery (5-Whys Analysis Loop)**: The agent recursively runs a 5-Whys inquiry chain to isolate the underlying root cause.
+3.  **Sequential Candidate Generation**: The agent triggers `5-Whys Solver Agent` and `TRIZ Solver Agent` sequentially.
+4.  **Explainability & Pareto Selection**: The best concepts are evaluated via the Pareto engine, the winner is recommended, and the system outputs an explanation detailing *why* it was chosen.
 
-### 🚀 Release 2: Interactive Loop & Deep Evaluation (Red Items)
-Release 2 introduces user interaction and a refinement loop before concept generation:
+### 🚀 Release 2: Interactive Loop, Parallel Solvers & Deep Evaluation (Red Items)
+Release 2 introduces user interaction, parallelization, and a deep evaluation loop:
 1.  **Interactive Definition**: Rather than going straight to execution, the agent guides the user to define their goals, focus areas, and what constraints to ignore. If the problem is unclear, it triggers clarification questions.
-2.  **Deep Evaluation**: Generated candidates undergo deep evaluation: grouping similar solutions, compiling pros and cons, and scoring candidates before final selection.
+2.  **Parallel Generation**: Move away from sequential execution in `SequentialAgent` to running candidate research streams concurrently using `ParallelAgent` to minimize overall SSE stream response times.
+3.  **Deep Evaluation**: Generated candidates undergo deep evaluation: grouping similar solutions, compiling pros and cons, and scoring candidates before final selection.
 
 ### 🌐 Release 3: Dynamic Routing & Enterprise Export (Green Items)
 The final tier adds dynamic routing capability and enterprise-grade reporting:

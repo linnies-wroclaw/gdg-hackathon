@@ -321,11 +321,61 @@
   }
 }
 
-.agent-graph__parallel-row {
+.agent-graph__merge {
   display: flex;
-  gap: var(--space-6);
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  justify-content: center;
+}
+
+.agent-graph__merge-lines-up {
+  display: flex;
+  justify-content: space-between;
+  width: 17.5rem;
+  height: 16px;
+}
+
+.agent-graph__merge-line-left,
+.agent-graph__merge-line-right {
+  width: 2px;
+  height: 100%;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__line--done {
+    background: #22c55e;
+  }
+  &.agent-graph__line--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__merge-bar {
+  width: 17.5rem;
+  height: 2px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__merge-line-bottom {
+  width: 2px;
+  height: 16px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
 }
 
 .agent-graph__footer {

@@ -93,6 +93,9 @@ export class ChatService {
       { role: 'user', text: message },
     ]);
 
+    const correlationId = self.crypto.randomUUID();
+    console.log(`[CID: ${correlationId}] Sending user message to chat:`, message);
+
     try {
       const chatId =
         this.selectedChatIdState() ?? (await this.createChat());
@@ -105,6 +108,7 @@ export class ChatService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Correlation-Id': correlationId,
         },
         body: JSON.stringify({ message }),
       });
@@ -146,6 +150,7 @@ export class ChatService {
         why_step: 'pending',
         triz_solver: 'pending',
         fiveY_solver: 'pending',
+        pareto_evaluation: 'pending',
       };
 
       const renderProgress = () => {
@@ -213,6 +218,15 @@ export class ChatService {
           `${getNodeHtml('TRIZ Solver Agent', 'triz_solver')}` +
           `${getNodeHtml('5-Whys Solver Agent', 'fiveY_solver')}` +
           `</div>` +
+          `<div class="agent-graph__merge">` +
+          `<div class="agent-graph__merge-lines-up">` +
+          `<div class="agent-graph__merge-line-left ${getSplitClass('triz_solver', 'pareto_evaluation')}"></div>` +
+          `<div class="agent-graph__merge-line-right ${getSplitClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `</div>` +
+          `<div class="agent-graph__merge-bar ${getConnectorClass('triz_solver', 'pareto_evaluation') || getConnectorClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `<div class="agent-graph__merge-line-bottom ${getConnectorClass('triz_solver', 'pareto_evaluation') || getConnectorClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `</div>` +
+          `${getNodeHtml('Pareto Evaluation & Verdict', 'pareto_evaluation')}` +
           `</div>` +
           `<p class="agent-graph__footer">Please stand by, generating TRIZ & 5-Whys evaluation report...</p>` +
           `</div>`;
@@ -264,10 +278,13 @@ export class ChatService {
               this.updateChatTitle(payload.chatId, payload.title);
             } 
             else if (payload.type === 'final_result') {
+              console.log(`[CID: ${correlationId}] Received final result successfully.`);
+              stepsStatus['pareto_evaluation'] = 'done';
               // Complete, overwrite with final report and evaluation trace
               updateAssistantText(payload.message.text, payload.message.trace);
             } 
             else if (payload.type === 'error') {
+              console.error(`[CID: ${correlationId}] Received error:`, payload.error);
               this.errorState.set(payload.error);
               updateAssistantText(`❌ Error: ${payload.error}`);
             } 
@@ -284,15 +301,18 @@ export class ChatService {
                   stepsStatus['why_step'] = 'done';
                   stepsStatus['triz_solver'] = 'active';
                 } else if (author === 'fiveY_solver') {
-                  stepsStatus['triz_solver'] = 'done';
+                  stepsStatus['why_step'] = 'done';
                   stepsStatus['fiveY_solver'] = 'active';
                 }
 
                 if (payload.finishReason === 'STOP') {
                   if (author === 'problem_extractor') stepsStatus['problem_extractor'] = 'done';
-                  if (author === 'why_step') stepsStatus['why_step'] = 'done';
                   if (author === 'triz_solver') stepsStatus['triz_solver'] = 'done';
                   if (author === 'fiveY_solver') stepsStatus['fiveY_solver'] = 'done';
+                }
+
+                if (stepsStatus['triz_solver'] === 'done' && stepsStatus['fiveY_solver'] === 'done') {
+                  stepsStatus['pareto_evaluation'] = 'active';
                 }
 
                 // Update the typed thinking output with latest status
@@ -309,6 +329,7 @@ export class ChatService {
 
       this.errorState.set(null);
     } catch (err: any) {
+      console.error(`[CID: ${correlationId}] Message processing failed:`, err);
       this.errorState.set(err.message || 'Something went wrong - try again.');
     } finally {
       this.pendingState.set(false);
