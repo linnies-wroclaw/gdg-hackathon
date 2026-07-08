@@ -23,6 +23,7 @@ export class ChatPage {
   private readonly logRef = viewChild.required<ElementRef<HTMLElement>>('log');
   private readonly inputRef =
     viewChild.required<ElementRef<HTMLTextAreaElement>>('input');
+  private readonly sidebarRef = viewChild.required(ChatSidebarComponent);
 
   constructor() {
     void this.chat.loadChats();
@@ -48,6 +49,12 @@ export class ChatPage {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendCurrent();
+    } else if (
+      event.key === 'ArrowLeft' &&
+      this.inputRef().nativeElement.selectionStart === 0
+    ) {
+      event.preventDefault();
+      this.sidebarRef().focusActiveItem();
     }
   }
 

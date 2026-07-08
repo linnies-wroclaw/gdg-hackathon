@@ -25,6 +25,7 @@ export class ChatSidebarComponent {
 
   chatSelected = output<void>();
   chatCreated = output<void>();
+  focusComposer = output<void>();
 
   private readonly chatButtons = viewChildren<ElementRef<HTMLButtonElement>>('chatButton');
 
@@ -50,16 +51,58 @@ export class ChatSidebarComponent {
     return index === 0;
   }
 
+  public focusActiveItem(): void {
+    const buttons = this.chatButtons();
+    const selectedId = this.chat.selectedChatId();
+    
+    // Знаходимо індекс активного елемента
+    const activeIndex = this.chat.chats().findIndex(item => item.id === selectedId);
+    const targetIndex = activeIndex !== -1 ? activeIndex : 0;
+    
+    buttons[targetIndex]?.nativeElement.focus();
+  }
+
   protected onKeydown(event: KeyboardEvent, index: number): void {
     const buttons = this.chatButtons();
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const nextIndex = (index + 1) % buttons.length;
-      buttons[nextIndex]?.nativeElement.focus();
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      const prevIndex = (index - 1 + buttons.length) % buttons.length;
-      buttons[prevIndex]?.nativeElement.focus();
+    if (buttons.length === 0) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        buttons[(index + 1) % buttons.length]?.nativeElement.focus();
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        buttons[(index - 1 + buttons.length) % buttons.length]?.nativeElement.focus();
+        break;
+
+      case 'PageDown':
+        event.preventDefault();
+        // Пропускаємо 5 елементів вперед (або до кінця)
+        buttons[Math.min(index + 5, buttons.length - 1)]?.nativeElement.focus();
+        break;
+
+      case 'PageUp':
+        event.preventDefault();
+        // Пропускаємо 5 елементів назад (або до початку)
+        buttons[Math.max(index - 5, 0)]?.nativeElement.focus();
+        break;
+
+      case 'Home':
+        event.preventDefault();
+        buttons[0]?.nativeElement.focus();
+        break;
+
+      case 'End':
+        event.preventDefault();
+        buttons[buttons.length - 1]?.nativeElement.focus();
+        break;
+
+      case 'ArrowRight':
+        event.preventDefault();
+        this.focusComposer.emit();
+        break;
     }
   }
 }
