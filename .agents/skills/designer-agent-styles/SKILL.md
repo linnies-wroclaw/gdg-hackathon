@@ -19,7 +19,7 @@ Angular uses **Emulated View Encapsulation** by default. This means component SC
   - Use the `host` property in the TypeScript component class to bind classes, roles, and ARIA attributes (e.g., `host: { 'class': 'chat__sidebar', 'role': 'complementary' }`).
   - Use `:host` selector in the component's SCSS file to style the host container itself.
   - Use `:host.className` to apply conditional alignments (e.g., `:host.chat__message--user` to set `align-self: flex-end`).
-- **Global Component Styles**: Styles that are shared between multiple components or are used inside dynamic template outlets (like `.chat__bubble`, `.chat__message`, and `.chat__bubble--thinking`) **MUST** be placed in the global component layer (e.g., [src/styles/components/_chat.scss](../../../../solution-system/apps/frontend/src/styles/components/_chat.scss)) and imported in the global [styles.scss](../../../../solution-system/apps/frontend/src/styles.scss).
+- **Global Component Styles**: Styles that are shared between multiple components or are used inside dynamic template outlets (like `.chat__bubble`, `.chat__message`, and `.chat__bubble--thinking`) **MUST** be placed in the global component layer (e.g., [src/styles/components/_chat.scss](solution-system/apps/frontend/src/styles/components/_chat.scss)) and imported in the global [styles.scss](solution-system/apps/frontend/src/styles.scss).
 
 ---
 
@@ -27,10 +27,10 @@ Angular uses **Emulated View Encapsulation** by default. This means component SC
 
 Every design value (colors, margins, typography, border-radius, shadows) must follow the three-tier token system. **Never hardcode hex values, sizes, or line heights directly in component styling.**
 
-1. **Tier 1: Primitives** ([_primitives.scss](../../../../solution-system/apps/frontend/src/styles/tokens/_primitives.scss)):
+1. **Tier 1: Primitives** ([_primitives.scss](solution-system/apps/frontend/src/styles/tokens/_primitives.scss)):
    - Defines the raw color palette scales, spacing grid, and font stacks.
    - Example: `--color-blue-500: #3b82f6;`, `--space-4: 1rem;`
-2. **Tier 2: Semantics** ([_semantic.scss](../../../../solution-system/apps/frontend/src/styles/tokens/_semantic.scss)):
+2. **Tier 2: Semantics** ([_semantic.scss](solution-system/apps/frontend/src/styles/tokens/_semantic.scss)):
    - Maps primitives to functional roles (e.g., primary, error, surface background, borders).
    - This layer enables theming and dark mode.
    - Example: `--color-primary: var(--color-blue-500);`, `--color-surface: var(--color-neutral-50);`
