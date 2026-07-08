@@ -45,3 +45,25 @@ Every design value (colors, margins, typography, border-radius, shadows) must fo
 - **Responsive Design**: Place media queries directly inside the selector rule they modify, or use the breakpoints map for consistency.
 - **Motion Accessibility**: Ensure all transition animations are paused when `prefers-reduced-motion: reduce` is active.
 - **Interactive States**: Always cover all 8 interactive states (Default, Hover, Focus-visible, Active, Disabled, Loading, Error, Read-only) for buttons, inputs, and form controls.
+
+---
+
+## 4. Design Verification & CI/CD Linting
+
+To prevent any layout degradation and preserve style isolation, the project runs an automated **Design Token Linter** in the CI/CD pipeline.
+
+### Rules Enforced by Linter
+
+- **No Hardcoded Hex Colors**: Selectors cannot contain raw hex colors (e.g. `#ffffff`). All colors must be read from CSS variables (`var(--color-*)`).
+- **No Hardcoded Pixel Values**: Values like `px` are forbidden for margins, paddings, font sizes, etc. (Except thin borders `1px`, `2px` and outlines `3px`). Use `rem` or space tokens.
+- **No Raw Color Functions**: Using functions like `rgb()`, `rgba()`, `hsl()` is disallowed inside component files.
+
+### Commands
+
+- **Run local linter**: Run this command to check styles before committing:
+
+  ```bash
+  node solution-system/scripts/lint-design-tokens.mjs
+  ```
+
+- **CI/CD Guard**: Any Pull Request containing design violations will fail the [GitHub Action Workflow](.github/workflows/lint-styles.yml).
