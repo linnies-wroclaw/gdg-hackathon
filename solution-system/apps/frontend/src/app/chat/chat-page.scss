@@ -154,49 +154,6 @@
   color: var(--color-text-muted);
 }
 
-.chat__message {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: 85%;
-}
-
-.chat__message--user {
-  align-self: flex-end;
-}
-
-.chat__message--assistant {
-  align-self: flex-start;
-}
-
-.chat__bubble {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-normal);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-// Rendered markdown manages its own block spacing (styles/components/markdown).
-.chat__bubble--markdown {
-  white-space: normal;
-}
-
-.chat__message--user .chat__bubble {
-  background: var(--color-primary);
-  border-end-end-radius: var(--radius-sm);
-  color: var(--color-on-primary);
-}
-
-.chat__message--assistant .chat__bubble {
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-end-start-radius: var(--radius-sm);
-  color: var(--color-text-primary);
-}
-
 // Thinking indicator — decorative; the global reduced-motion rule freezes it,
 // and pending state is still conveyed by the sr-only text + disabled button.
 .chat__bubble--thinking {

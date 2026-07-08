@@ -1,20 +1,18 @@
-<article class="chat__message chat__message--{{ message().role }}">
-  <span class="sr-only">
-    {{ message().role === 'user' ? 'You' : 'Assistant' }}:
-  </span>
-  @if (message().role === 'assistant') {
-    <div
-      class="chat__bubble chat__bubble--markdown markdown-body"
-      [innerHTML]="message().text | markdown"
-    ></div>
-    @if (hasTraceView(message().trace)) {
-      @defer (on viewport) {
-        <app-solution-trace [trace]="message().trace!"></app-solution-trace>
-      } @placeholder {
-        <div class="trace-placeholder">Loading trace details...</div>
-      }
+<span class="sr-only">
+  {{ message().role === 'user' ? 'You' : 'Assistant' }}:
+</span>
+@if (message().role === 'assistant') {
+  <div
+    class="chat__bubble chat__bubble--markdown markdown-body"
+    [innerHTML]="message().text | markdown"
+  ></div>
+  @if (hasTraceView(message().trace)) {
+    @defer (on viewport) {
+      <app-solution-trace [trace]="message().trace!"></app-solution-trace>
+    } @placeholder {
+      <div class="trace-placeholder">Loading trace details...</div>
     }
-  } @else {
-    <p class="chat__bubble">{{ message().text }}</p>
   }
-</article>
+} @else {
+  <p class="chat__bubble">{{ message().text }}</p>
+}
