@@ -1,39 +1,8 @@
 <div class="chat">
-  <aside class="chat__sidebar" aria-label="Conversations">
-    <div class="chat__sidebar-header">
-      <h1 class="chat__title">Solution system</h1>
-      <button
-        class="chat__new"
-        type="button"
-        [disabled]="chat.pending()"
-        (click)="createChat()"
-      >
-        New chat
-      </button>
-      <a class="chat__design-system" href="/design-system.html">
-        Design system
-      </a>
-    </div>
-
-    <nav class="chat__list" aria-label="Chat history">
-      @if (chat.chats().length === 0) {
-        <p class="chat__empty-list">No saved chats yet.</p>
-      }
-
-      @for (item of chat.chats(); track item.id) {
-        <button
-          class="chat__list-item"
-          type="button"
-          [class.chat__list-item--active]="item.id === chat.selectedChatId()"
-          [attr.aria-current]="item.id === chat.selectedChatId() ? 'page' : null"
-          [disabled]="chat.pending()"
-          (click)="selectChat(item.id)"
-        >
-          {{ item.title }}
-        </button>
-      }
-    </nav>
-  </aside>
+  <app-chat-sidebar
+    (chatCreated)="focusInput()"
+    (chatSelected)="focusInput()"
+  ></app-chat-sidebar>
 
   <section class="chat__panel" aria-label="Selected conversation">
     <header class="chat__header">
@@ -59,26 +28,7 @@
           <p class="chat__empty">Ask the agent anything to get started.</p>
         }
         @for (message of chat.messages(); track message.id ?? $index) {
-          <article class="chat__message chat__message--{{ message.role }}">
-            <span class="sr-only">
-              {{ message.role === 'user' ? 'You' : 'Assistant' }}:
-            </span>
-            @if (message.role === 'assistant') {
-              <div
-                class="chat__bubble chat__bubble--markdown markdown-body"
-                [innerHTML]="message.text | markdown"
-              ></div>
-              @if (hasTraceView(message.trace)) {
-                @defer (on viewport) {
-                  <app-solution-trace [trace]="message.trace"></app-solution-trace>
-                } @placeholder {
-                  <div class="trace-placeholder">Loading trace details...</div>
-                }
-              }
-            } @else {
-              <p class="chat__bubble">{{ message.text }}</p>
-            }
-          </article>
+          <app-chat-message [message]="message"></app-chat-message>
         }
         @if (chat.pending()) {
           <article class="chat__message chat__message--assistant">
