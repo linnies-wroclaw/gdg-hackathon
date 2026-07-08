@@ -11,7 +11,6 @@ import { SolutionTraceComponent } from '../solution-trace/solution-trace';
   selector: 'app-chat-message',
   standalone: true,
   templateUrl: './chat-message.html',
-  styleUrl: './chat-message.scss',
   host: {
     'role': 'article',
     '[class]': '"chat__message chat__message--" + message().role',
