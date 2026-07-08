@@ -50,7 +50,8 @@ This phase focuses on enhancing user control and boosting performance.
 - **Interactive Problem Definition:** Implement the clarification loop. If the extracted problem is ambiguous, the agent prompts the user with clarifying questions before launching solvers.
 - **Goal & Constraint Toggles:** Allow users to define what to focus on and what constraints to ignore (e.g., toggling "Zero Dry-Docking" or "IMO-regulated materials").
 - **Parallel Generation:** Move away from sequential execution in `SequentialAgent` to running candidate research streams concurrently using `ParallelAgent` to optimize overall SSE stream response times.
-- **Qualitative Evaluator:** Augment the mathematical engine with an LLM evaluator that groups similar solutions and automatically lists qualitative pros and cons.
+- **Interactive Keyboard Navigation Onboarding**: Show a popup hint explaining available keyboard actions/shortcuts when the user begins keyboard-based navigation, along with a "Don't show again" persistent preference button.
+- **Visual Focus Direction Guidelines (Extended Support Mode)**: Provide visual overlays or pointers indicating where next focus jumps will land and explaining what panels/buttons they interact with.
 
 ---
 
