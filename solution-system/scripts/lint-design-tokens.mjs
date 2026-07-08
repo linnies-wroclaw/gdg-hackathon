@@ -15,11 +15,11 @@ const FILE_EXT = '.scss';
 
 // Regex patterns to check for hardcoded design values
 const HEX_COLOR_REGEX = /#[0-9a-fA-F]{3,8}\b/;
-// Allows 1px, 2px, 3px for borders, outlines and offsets
 const PX_VALUE_REGEX = /\b(?!1px\b)(?!2px\b)(?!3px\b)\d+px\b/;
 const COLOR_FUNC_REGEX = /\b(rgb|rgba|hsl|hsla)\(/;
 
 let errorsFound = 0;
+const violationsByFile = {};
 
 function walkDir(dir, callback) {
   const files = fs.readdirSync(dir);
@@ -47,27 +47,42 @@ function lintFile(filePath) {
     const lineNumber = index + 1;
     const relativePath = path.relative(path.join(__dirname, '..'), filePath);
 
+    let errorMsg = null;
+    let tip = null;
+
     // 1. Check for hex colors
     if (HEX_COLOR_REGEX.test(line)) {
-      console.error(`\x1b[31m[ERROR]\x1b[0m ${relativePath}:${lineNumber} - Hardcoded hex color found: "${line.trim()}"`);
-      errorsFound++;
+      errorMsg = `Hardcoded hex color found: "${line.trim()}"`;
+      tip = 'Use semantic tokens like var(--color-surface) or var(--color-primary).';
+    }
+    // 2. Check for hardcoded px values
+    else if (PX_VALUE_REGEX.test(line)) {
+      errorMsg = `Hardcoded px value found: "${line.trim()}"`;
+      tip = 'Use layout spacing tokens like var(--space-*) or border-radius tokens var(--radius-*).';
+    }
+    // 3. Check for color functions
+    else if (COLOR_FUNC_REGEX.test(line) && !line.includes('box-shadow:')) {
+      errorMsg = `Hardcoded color function found: "${line.trim()}"`;
+      tip = 'Declare functional gradients/colors in the semantic design token layer.';
     }
 
-    // 2. Check for hardcoded px values (excluding 1px/2px/3px borders/outlines)
-    if (PX_VALUE_REGEX.test(line)) {
-      console.error(`\x1b[31m[ERROR]\x1b[0m ${relativePath}:${lineNumber} - Hardcoded px value found: "${line.trim()}" (Use var(--space-*) or var(--radius-*))`);
-      errorsFound++;
-    }
-
-    // 3. Check for color functions (excluding box-shadow alpha channels)
-    if (COLOR_FUNC_REGEX.test(line) && !line.includes('box-shadow:')) {
-      console.error(`\x1b[31m[ERROR]\x1b[0m ${relativePath}:${lineNumber} - Hardcoded color function found: "${line.trim()}"`);
+    if (errorMsg) {
+      if (!violationsByFile[relativePath]) {
+        violationsByFile[relativePath] = [];
+      }
+      violationsByFile[relativePath].push({
+        line: lineNumber,
+        message: errorMsg,
+        tip: tip
+      });
       errorsFound++;
     }
   });
 }
 
-console.log('Running Design Tokens Lint Check...');
+console.log('\n\x1b[36m🛡️  DESIGN SYSTEM LINT CHECK\x1b[0m');
+console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
+
 SEARCH_DIRS.forEach(dir => {
   if (fs.existsSync(dir)) {
     walkDir(dir, lintFile);
@@ -75,9 +90,20 @@ SEARCH_DIRS.forEach(dir => {
 });
 
 if (errorsFound > 0) {
-  console.log(`\n\x1b[31mFAIL:\x1b[0m Found ${errorsFound} design token violations. Please use design system variables.`);
+  Object.keys(violationsByFile).forEach(file => {
+    console.log(`\n\x1b[33m📁 File: ${file}\x1b[0m`);
+    violationsByFile[file].forEach(violation => {
+      console.log(`  \x1b[31m❌ Line ${violation.line}:\x1b[0m ${violation.message}`);
+      if (violation.tip) {
+        console.log(`     \x1b[90m↳ Tip: ${violation.tip}\x1b[0m`);
+      }
+    });
+  });
+  console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
+  console.log(`\n\x1b[41m\x1b[37m FAIL \x1b[0m Found \x1b[31m${errorsFound}\x1b[0m design token violations. Please use design system variables.\n`);
   process.exit(1);
 } else {
-  console.log('\n\x1b[32mPASS:\x1b[0m All component styles adhere to design tokens guidelines!');
+  console.log('\x1b[32m✅ PASS: All component styles adhere to design tokens guidelines!\x1b[0m');
+  console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m\n');
   process.exit(0);
 }
