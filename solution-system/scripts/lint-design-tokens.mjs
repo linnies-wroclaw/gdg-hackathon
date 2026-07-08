@@ -80,30 +80,42 @@ function lintFile(filePath) {
   });
 }
 
-console.log('\n\x1b[36m🛡️  DESIGN SYSTEM LINT CHECK\x1b[0m');
-console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
-
 SEARCH_DIRS.forEach(dir => {
   if (fs.existsSync(dir)) {
     walkDir(dir, lintFile);
   }
 });
 
+// Buffer all outputs so we can choose to write to stdout or stderr
+const outputBuffer = [];
+function writeLine(text) {
+  outputBuffer.push(text);
+}
+
+writeLine('\n\x1b[36m🛡️  DESIGN SYSTEM LINT CHECK\x1b[0m');
+writeLine('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
+
 if (errorsFound > 0) {
   Object.keys(violationsByFile).forEach(file => {
-    console.log(`\n\x1b[33m📁 File: ${file}\x1b[0m`);
+    writeLine(`\n\x1b[33m📁 File: ${file}\x1b[0m`);
     violationsByFile[file].forEach(violation => {
-      console.log(`  \x1b[31m❌ Line ${violation.line}:\x1b[0m ${violation.message}`);
+      writeLine(`  \x1b[31m❌ Line ${violation.line}:\x1b[0m ${violation.message}`);
       if (violation.tip) {
-        console.log(`     \x1b[90m↳ Tip: ${violation.tip}\x1b[0m`);
+        writeLine(`     \x1b[90m↳ Tip: ${violation.tip}\x1b[0m`);
       }
     });
   });
-  console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
-  console.log(`\n\x1b[41m\x1b[37m FAIL \x1b[0m Found \x1b[31m${errorsFound}\x1b[0m design token violations. Please use design system variables.\n`);
+  writeLine('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m');
+  writeLine(`\n\x1b[41m\x1b[37m FAIL \x1b[0m Found \x1b[31m${errorsFound}\x1b[0m design token violations. Please use design system variables.\n`);
+  
+  // Write everything to stderr so Git forwards the output to the user's terminal
+  console.error(outputBuffer.join('\n'));
   process.exit(1);
 } else {
-  console.log('\x1b[32m✅ PASS: All component styles adhere to design tokens guidelines!\x1b[0m');
-  console.log('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m\n');
+  writeLine('✅ PASS: All component styles adhere to design tokens guidelines!');
+  writeLine('\x1b[90m────────────────────────────────────────────────────────────────────────\x1b[0m\n');
+  
+  // Write to stdout
+  console.log(outputBuffer.join('\n'));
   process.exit(0);
 }
