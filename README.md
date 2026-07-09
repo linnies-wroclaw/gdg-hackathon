@@ -101,14 +101,18 @@ A `Makefile` is provided at the repository root to simplify workspace tasks:
 
 * **Setup & Dependency Installation**:
   ```bash
-  make init       # Copy .env.example to .env
-  make install    # Install all Node.js and Python dependencies
+  make init       # Copy .env.example to .env and solution-system/.env
+  make install    # Install all monorepo, python, and ADK agent dependencies
   ```
 * **Docker Compose**:
   ```bash
-  make up         # Spin up all services via Docker Compose
+  make up         # Spin up all services via Docker Compose with .env variables loaded
   make down       # Stop and remove containers
   make logs       # Follow container logs
+  ```
+* **Hybrid Local Development (Highly Recommended)**:
+  ```bash
+  make dev        # Starts Postgres and TRIZ MCP in Docker, and runs Angular, NestJS API, and ADK Agent locally with live reload
   ```
 * **Local Development (No Docker)**:
   ```bash
@@ -120,22 +124,27 @@ A `Makefile` is provided at the repository root to simplify workspace tasks:
   ```
 * **Testing & Linting**:
   ```bash
-  make test       # Run all backend and frontend unit tests
-  make lint       # Lint the NestJS and Angular applications
-  make clean      # Clean up build outputs and caches
+  make test         # Run all backend and frontend unit tests
+  make lint         # Lint the NestJS and Angular applications and check design tokens
+  make lint-tokens  # Lint design system tokens strictly (checks SCSS files)
+  make clean        # Clean up build outputs and caches
   ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Option A: Run everything with Docker Compose (Recommended)
+### Option A: Run with Docker Compose (Recommended Setup)
 
-From the root directory, launch all services in containers:
-
-```bash
-docker compose -f solution-system/docker-compose.yml up --build
-```
+1. Initialize your local configuration:
+   ```bash
+   make init
+   ```
+2. Open the `.env` file at the root directory and specify your `GOOGLE_GENAI_API_KEY`.
+3. Launch all services:
+   ```bash
+   make up
+   ```
 
 Once all containers are healthy, open your browser and navigate to:
 * **Frontend client**: [http://localhost:4200](http://localhost:4200)
@@ -145,40 +154,61 @@ Once all containers are healthy, open your browser and navigate to:
 
 ---
 
-### Option B: Local Development (Individual Services)
+### Option B: Hybrid Live Reload Development (No-Docker Frontend/API)
+
+If you are styling the UI or debugging API responses, run the heavy background services in Docker while developing the frontend, NestJS API, and agent locally with hot reloading:
+
+1. Initialize and install all dependencies:
+   ```bash
+   make init
+   make install
+   ```
+2. Ensure `GOOGLE_GENAI_API_KEY` is configured in the `.env` files.
+3. Start the hybrid environment:
+   ```bash
+   make dev
+   ```
+
+---
+
+### Option C: Manual Local Development (Individual Services)
 
 #### 1. Start the TRIZ MCP Server
+
 ```bash
 cd solution-system/mcp-server
-cp ../.env.example .env
 uv sync
 uv run python app/main.py
 ```
+
 *Listens on `http://localhost:8000/mcp`*
 
 #### 2. Start the ADK Agent
+
 ```bash
 cd solution-system/adg-agents
-# Ensure GOOGLE_GENAI_API_KEY is exported in your shell
-export GOOGLE_GENAI_API_KEY="your-gemini-key"
 npm install
 npx adk api_server agent.ts --port 8081 --host 0.0.0.0
 ```
+
 *Listens on `http://localhost:8081`*
 
 #### 3. Start the NestJS Backend Gateway
+
 ```bash
 cd solution-system
-npm install
 npx nx serve api
 ```
+
 *Listens on `http://localhost:3000`*
 
 #### 4. Start the Angular Frontend
+
 ```bash
 cd solution-system
 npx nx serve frontend
 ```
+
 *Listens on `http://localhost:4200`*
 
 ---
