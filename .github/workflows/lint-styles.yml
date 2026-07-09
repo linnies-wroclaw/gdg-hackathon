@@ -17,6 +17,22 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('solution-system/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache Nx cache
+        uses: actions/cache@v4
+        with:
+          path: solution-system/.nx/cache
+          key: ${{ runner.os }}-nx-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
+
       - name: Install dependencies
         run: |
           cd solution-system
@@ -26,5 +42,6 @@ jobs:
         run: |
           cd solution-system
           bun run lint
+
 
 
