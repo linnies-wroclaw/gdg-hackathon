@@ -1,13 +1,13 @@
-FROM node:24.18.0-alpine AS build
+FROM oven/bun:1-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json nx.json tsconfig.base.json ./
+COPY package.json bun.lock nx.json tsconfig.base.json ./
 COPY eslint.config.mjs jest.config.ts jest.preset.js ./
 COPY apps ./apps
 
-RUN npm install
-RUN npx nx build frontend
+RUN bun install --frozen-lockfile
+RUN bunx nx build frontend
 
 FROM nginx:alpine
 

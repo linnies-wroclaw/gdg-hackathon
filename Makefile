@@ -16,7 +16,7 @@ help:
 	@echo "--------------------------------------------------"
 	@echo "Setup and Installation:"
 	@echo "  make init           - Copy env template to .env files"
-	@echo "  make install        - Install npm and python dependencies"
+	@echo "  make install        - Install bun and python dependencies"
 	@echo ""
 	@echo "Docker Compose Commands:"
 	@echo "  make up             - Build and start all services via Docker Compose"
@@ -51,12 +51,12 @@ init:
 
 # Install all workspace dependencies
 install:
-	@echo "Installing monorepo npm dependencies..."
-	cd solution-system && npm install
+	@echo "Installing monorepo bun dependencies..."
+	cd solution-system && bun install
 	@echo "Installing python mcp-server dependencies..."
 	cd solution-system/mcp-server && uv sync
 	@echo "Installing ADK agent dependencies..."
-	cd solution-system/adg-agents && npm install
+	cd solution-system/adg-agents && bun install
 	@echo "All dependencies installed successfully."
 
 # Docker Compose: spin up all services
@@ -76,16 +76,16 @@ dev:
 	docker compose -f solution-system/docker-compose.yml up -d postgres mcp-server
 	@echo "Cleaning up any stale processes on ports 8081, 3000, 4200..."
 	@fuser -k 8081/tcp 3000/tcp 4200/tcp 2>/dev/null || true
-	npx --yes concurrently --kill-others \
+	bunx concurrently --kill-others \
 		-n "api,frontend,agent" \
 		-c "blue,green,magenta" \
-		"cd solution-system && DB_PORT=$(DB_PORT_HOST) npx nx serve api" \
-		"cd solution-system && npx nx serve frontend" \
-		"cd solution-system/adg-agents && npx adk api_server agent.ts --port 8081 --host 0.0.0.0"
+		"cd solution-system && DB_PORT=$(DB_PORT_HOST) bunx nx serve api" \
+		"cd solution-system && bunx nx serve frontend" \
+		"cd solution-system/adg-agents && bunx adk api_server agent.ts --port 8081 --host 0.0.0.0"
 
 # Start local dev server for both api and frontend
 dev-all:
-	cd solution-system && npm run start
+	cd solution-system && bun run start
 
 # Run the python FastMCP server locally
 dev-mcp:
@@ -93,27 +93,27 @@ dev-mcp:
 
 # Run the ADK Agent API server locally
 dev-agent:
-	cd solution-system/adg-agents && npx adk api_server agent.ts --port 8081 --host 0.0.0.0
+	cd solution-system/adg-agents && bunx adk api_server agent.ts --port 8081 --host 0.0.0.0
 
 # Run the NestJS API server locally
 dev-api:
-	cd solution-system && npx nx serve api
+	cd solution-system && bunx nx serve api
 
 # Run the Angular frontend locally
 dev-frontend:
-	cd solution-system && npx nx serve frontend
+	cd solution-system && bunx nx serve frontend
 
 # Run unit tests across NestJS API and Angular projects
 test:
-	cd solution-system && npm run test
+	cd solution-system && bun run test
 
 # Lint NestJS API and Angular projects
 lint:
-	cd solution-system && npm run lint
+	cd solution-system && bun run lint
 
 # Lint design tokens only
 lint-tokens:
-	cd solution-system && npm run lint:tokens
+	cd solution-system && bun run lint:tokens
 
 # Clean build outputs and caches
 clean:
