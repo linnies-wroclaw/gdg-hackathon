@@ -64,7 +64,7 @@ make lint-tokens
 Or use the npm script directly:
 
 ```bash
-npm run lint:tokens
+bun run lint:tokens
 ```
 
 ---

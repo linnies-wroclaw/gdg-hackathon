@@ -84,7 +84,7 @@
   white-space: nowrap;
   cursor: pointer;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled):not(.chat__list-item--active) {
     background: var(--color-surface);
   }
 }
@@ -92,6 +92,27 @@
 .chat__list-item--active {
   background: var(--color-primary);
   color: var(--color-on-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+}
+
+.chat__list-item {
+  &:disabled {
+    cursor: not-allowed;
+
+    &:not(.chat__list-item--active) {
+      background: transparent;
+      color: var(--color-text-muted);
+    }
+
+    &.chat__list-item--active {
+      background: var(--color-primary);
+      color: var(--color-on-primary);
+      opacity: 0.7;
+    }
+  }
 }
 
 @media (max-width: 48rem) {

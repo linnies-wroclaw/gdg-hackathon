@@ -22,47 +22,47 @@ This monorepo uses [Nx](https://nx.dev) to manage tasks, builds, and dependencie
 
 Run both the NestJS API and Angular frontend concurrently:
 ```sh
-npm run start
+bun run start
 ```
 Or start them individually:
 
 * **Start Backend API only**:
   ```sh
-  npm run start:api
-  # or: npx nx serve api
+  bun run start:api
+  # or: bunx nx serve api
   ```
 * **Start Frontend Client only**:
   ```sh
-  npm run start:frontend
-  # or: npx nx serve frontend
+  bun run start:frontend
+  # or: bunx nx serve frontend
   ```
 
 ### Testing & Linting
 
 Run tests for the whole workspace:
 ```sh
-npm run test
+bun run test
 # or individual projects:
-npx nx test api
-npx nx test frontend
+bunx nx test api
+bunx nx test frontend
 ```
 
 Lint code in the monorepo:
 ```sh
-npm run lint
+bun run lint
 # or individual projects:
-npx nx lint api
-npx nx lint frontend
+bunx nx lint api
+bunx nx lint frontend
 ```
 
 ### Production Build
 
 Create production bundles for all applications:
 ```sh
-npm run build
+bun run build
 # or individual projects:
-npx nx build api
-npx nx nx build frontend
+bunx nx build api
+bunx nx build frontend
 ```
 
 ---
