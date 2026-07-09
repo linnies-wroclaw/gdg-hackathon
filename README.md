@@ -1,7 +1,20 @@
 # How to run the project
-Simplest way
 
-GOOGLE_GENAI_API_KEY=<your-gemini-api-key> docker compose up --build
+## Option 1: Using Makefile (Simplest)
+
+```bash
+make init
+# Open .env and insert your GOOGLE_GENAI_API_KEY
+make up
+```
+
+## Option 2: Using raw Docker Compose (If `make` is not installed)
+
+```bash
+cp .env.example .env
+# Open .env and insert your GOOGLE_GENAI_API_KEY, then:
+docker compose -f solution-system/docker-compose.yml --env-file .env up --build
+```
 
 # BuildWithAI: TRIZ MCP Agent Platform
 
