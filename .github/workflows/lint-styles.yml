@@ -1,4 +1,4 @@
-name: Lint Design Tokens
+name: Lint Code and Design Tokens
 
 on:
   push:
@@ -12,12 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24'
+          bun-version: latest
 
-      - name: Run Design Tokens Lint
-        run: node solution-system/scripts/lint-design-tokens.mjs
+      - name: Install dependencies
+        run: |
+          cd solution-system
+          bun install --frozen-lockfile
+
+      - name: Run Linters
+        run: |
+          cd solution-system
+          bun run lint
 
 
