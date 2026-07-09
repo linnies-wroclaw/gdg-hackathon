@@ -15,8 +15,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '24'
 
       - name: Run Design Tokens Lint
         run: node solution-system/scripts/lint-design-tokens.mjs
+
 
