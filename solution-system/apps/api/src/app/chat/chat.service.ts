@@ -154,14 +154,29 @@ export class ChatService {
     });
 
     this.logger.log(`User message persisted with ID: ${userMessage.id}`);
+    const escapeHtml = (unsafe: string): string => {
+      return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    const sanitizedTitle = escapeHtml(title);
+    const sanitizedUserMessage = {
+      ...this.toMessage(userMessage),
+      text: escapeHtml(userMessage.text),
+    };
 
     // Send an initial event with the user message and updated chat info
     res.write(`data: ${JSON.stringify({
       type: 'user_message',
       chatId: chat.id,
-      title,
-      message: this.toMessage(userMessage),
+      title: sanitizedTitle,
+      message: sanitizedUserMessage,
     })}\n\n`);
+
 
     let buffer = '';
     try {
