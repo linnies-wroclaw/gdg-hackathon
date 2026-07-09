@@ -191,6 +191,9 @@ describe('AgentService', () => {
       1,
       'http://adk-agent:8081/apps/agent/users/user/sessions',
       {},
+      {
+        headers: {},
+      },
     );
     expect(mockedAxios.post).toHaveBeenNthCalledWith(
       2,

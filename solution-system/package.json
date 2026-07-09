@@ -8,7 +8,8 @@
     "start:frontend": "nx serve frontend",
     "build": "nx run-many -t build -p api frontend",
     "test": "nx run-many -t test -p api frontend",
-    "lint": "nx run-many -t lint -p api frontend"
+    "lint": "nx run-many -t lint -p api frontend && npm run lint:tokens",
+    "lint:tokens": "node scripts/lint-design-tokens.mjs"
   },
   "private": true,
   "dependencies": {

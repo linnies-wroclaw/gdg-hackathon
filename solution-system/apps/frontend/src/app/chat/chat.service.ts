@@ -86,32 +86,251 @@ export class ChatService {
 
     this.errorState.set(null);
     this.pendingState.set(true);
+    
+    // Add user message optimistically (without an id yet)
     this.messagesState.update((messages) => [
       ...messages,
       { role: 'user', text: message },
     ]);
 
+    const correlationId = self.crypto.randomUUID();
+    console.log(`[CID: ${correlationId}] Sending user message to chat:`, message);
+
     try {
       const chatId =
         this.selectedChatIdState() ?? (await this.createChat());
       if (!chatId) {
+        this.pendingState.set(false);
         return;
       }
 
-      const response = await firstValueFrom(
-        this.http.post<SendChatMessageResponse>(
-          `/api/chats/${chatId}/messages`,
-          { message },
-        ),
-      );
-      this.messagesState.update((messages) => [
-        ...messages.filter((entry) => entry.id !== undefined),
-        ...response.messages,
-      ]);
+      const response = await fetch(`/api/chats/${chatId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Correlation-Id': correlationId,
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No stream reader available');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let assistantMessageIndex = -1;
+
+      const updateAssistantText = (newText: string, trace?: any) => {
+        this.messagesState.update((messages) => {
+          const updated = [...messages];
+          if (assistantMessageIndex === -1) {
+            const last = updated[updated.length - 1];
+            if (last && last.role === 'assistant') {
+              assistantMessageIndex = updated.length - 1;
+              updated[assistantMessageIndex] = { role: 'assistant', text: newText, trace };
+            } else {
+              updated.push({ role: 'assistant', text: newText, trace });
+              assistantMessageIndex = updated.length - 1;
+            }
+          } else {
+            updated[assistantMessageIndex] = { role: 'assistant', text: newText, trace };
+          }
+          return updated;
+        });
+      };
+
+      const stepsStatus: Record<string, string> = {
+        problem_extractor: 'pending',
+        why_step: 'pending',
+        triz_solver: 'pending',
+        fiveY_solver: 'pending',
+        pareto_evaluation: 'pending',
+      };
+
+      const renderProgress = () => {
+        const getNodeHtml = (label: string, key: string) => {
+          const status = stepsStatus[key];
+          let statusClass = 'agent-graph__node--pending';
+          let badgeLabel = 'Waiting';
+
+          if (status === 'active') {
+            statusClass = 'agent-graph__node--active';
+            badgeLabel = 'Running';
+          } else if (status === 'done') {
+            statusClass = 'agent-graph__node--done';
+            badgeLabel = 'Done';
+          }
+
+          return `<div class="agent-graph__node ${statusClass}">` +
+            `<div class="agent-graph__node-header">` +
+            `<span class="agent-graph__node-dot"></span>` +
+            `<span class="agent-graph__node-title">${label}</span>` +
+            `</div>` +
+            `<span class="agent-graph__node-badge">${badgeLabel}</span>` +
+            `</div>`;
+        };
+
+        const getConnectorClass = (prevKey: string, nextKey: string) => {
+          const prevStatus = stepsStatus[prevKey];
+          const nextStatus = stepsStatus[nextKey];
+          if (nextStatus === 'active' || nextStatus === 'done') {
+            return 'agent-graph__connector--active';
+          }
+          if (prevStatus === 'done') {
+            return 'agent-graph__connector--done';
+          }
+          return '';
+        };
+
+        const getSplitClass = (parentKey: string, childKey: string) => {
+          const parentStatus = stepsStatus[parentKey];
+          const childStatus = stepsStatus[childKey];
+          if (childStatus === 'active' || childStatus === 'done') {
+            return 'agent-graph__line--active';
+          }
+          if (parentStatus === 'done') {
+            return 'agent-graph__line--done';
+          }
+          return '';
+        };
+
+        return `<div class="agent-graph">` +
+          `<h3 class="agent-graph__title">Orchestrating Solution Engineering Agents...</h3>` +
+          `<div class="agent-graph__nodes">` +
+          `${getNodeHtml('Problem Extractor Agent', 'problem_extractor')}` +
+          `<div class="agent-graph__connector ${getConnectorClass('problem_extractor', 'why_step')}"></div>` +
+          `${getNodeHtml('5-Whys Analysis Loop', 'why_step')}` +
+          `<div class="agent-graph__split">` +
+          `<div class="agent-graph__split-line-top ${getConnectorClass('why_step', 'triz_solver') || getConnectorClass('why_step', 'fiveY_solver')}"></div>` +
+          `<div class="agent-graph__split-bar ${getConnectorClass('why_step', 'triz_solver') || getConnectorClass('why_step', 'fiveY_solver')}"></div>` +
+          `<div class="agent-graph__split-lines-down">` +
+          `<div class="agent-graph__split-line-left ${getSplitClass('why_step', 'triz_solver')}"></div>` +
+          `<div class="agent-graph__split-line-right ${getSplitClass('why_step', 'fiveY_solver')}"></div>` +
+          `</div>` +
+          `</div>` +
+          `<div class="agent-graph__parallel-row">` +
+          `${getNodeHtml('TRIZ Solver Agent', 'triz_solver')}` +
+          `${getNodeHtml('5-Whys Solver Agent', 'fiveY_solver')}` +
+          `</div>` +
+          `<div class="agent-graph__merge">` +
+          `<div class="agent-graph__merge-lines-up">` +
+          `<div class="agent-graph__merge-line-left ${getSplitClass('triz_solver', 'pareto_evaluation')}"></div>` +
+          `<div class="agent-graph__merge-line-right ${getSplitClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `</div>` +
+          `<div class="agent-graph__merge-bar ${getConnectorClass('triz_solver', 'pareto_evaluation') || getConnectorClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `<div class="agent-graph__merge-line-bottom ${getConnectorClass('triz_solver', 'pareto_evaluation') || getConnectorClass('fiveY_solver', 'pareto_evaluation')}"></div>` +
+          `</div>` +
+          `${getNodeHtml('Pareto Evaluation & Verdict', 'pareto_evaluation')}` +
+          `</div>` +
+          `<p class="agent-graph__footer">Please stand by, generating TRIZ & 5-Whys evaluation report...</p>` +
+          `</div>`;
+      };
+
+      // Set initial progress state
+      updateAssistantText(renderProgress());
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) {
+            continue;
+          }
+
+          const payloadStr = trimmed.substring(6);
+          if (!payloadStr) {
+            continue;
+          }
+
+          try {
+            const payload = JSON.parse(payloadStr);
+
+            if (payload.type === 'user_message') {
+              // Update user message with the persisted one containing database ID
+              this.messagesState.update((messages) => {
+                const updated = [...messages];
+                let userIdx = -1;
+                for (let i = updated.length - 1; i >= 0; i--) {
+                  if (updated[i].role === 'user') {
+                    userIdx = i;
+                    break;
+                  }
+                }
+                if (userIdx !== -1) {
+                  updated[userIdx] = payload.message;
+                }
+                return updated;
+              });
+              this.updateChatTitle(payload.chatId, payload.title);
+            } 
+            else if (payload.type === 'final_result') {
+              console.log(`[CID: ${correlationId}] Received final result successfully.`);
+              stepsStatus['pareto_evaluation'] = 'done';
+              // Complete, overwrite with final report and evaluation trace
+              updateAssistantText(payload.message.text, payload.message.trace);
+            } 
+            else if (payload.type === 'error') {
+              console.error(`[CID: ${correlationId}] Received error:`, payload.error);
+              this.errorState.set(payload.error);
+              updateAssistantText(`❌ Error: ${payload.error}`);
+            } 
+            else {
+              // Handle agent progress event
+              const author = payload.author;
+              if (author) {
+                if (author === 'problem_extractor') {
+                  stepsStatus['problem_extractor'] = 'active';
+                } else if (author === 'why_step') {
+                  stepsStatus['problem_extractor'] = 'done';
+                  stepsStatus['why_step'] = 'active';
+                } else if (author === 'triz_solver') {
+                  stepsStatus['why_step'] = 'done';
+                  stepsStatus['triz_solver'] = 'active';
+                } else if (author === 'fiveY_solver') {
+                  stepsStatus['why_step'] = 'done';
+                  stepsStatus['fiveY_solver'] = 'active';
+                }
+
+                if (payload.finishReason === 'STOP') {
+                  if (author === 'problem_extractor') stepsStatus['problem_extractor'] = 'done';
+                  if (author === 'triz_solver') stepsStatus['triz_solver'] = 'done';
+                  if (author === 'fiveY_solver') stepsStatus['fiveY_solver'] = 'done';
+                }
+
+                if (stepsStatus['triz_solver'] === 'done' && stepsStatus['fiveY_solver'] === 'done') {
+                  stepsStatus['pareto_evaluation'] = 'active';
+                }
+
+                // Update the typed thinking output with latest status
+                if (assistantMessageIndex === -1 || !this.messagesState()[assistantMessageIndex]?.trace) {
+                  updateAssistantText(renderProgress());
+                }
+              }
+            }
+          } catch {
+            // Ignore JSON parsing errors for incomplete chunks
+          }
+        }
+      }
+
       this.errorState.set(null);
-      this.updateChatTitle(response.chatId, response.title);
-    } catch {
-      this.errorState.set('Something went wrong - try again.');
+    } catch (err: any) {
+      console.error(`[CID: ${correlationId}] Message processing failed:`, err);
+      this.errorState.set(err.message || 'Something went wrong - try again.');
     } finally {
       this.pendingState.set(false);
     }

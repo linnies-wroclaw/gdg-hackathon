@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ChatDetailDto,
   ChatSummaryDto,
@@ -27,10 +28,11 @@ export class ChatController {
   }
 
   @Post(':chatId/messages')
-  sendMessage(
+  async sendMessage(
     @Param('chatId') chatId: string,
     @Body() request: SendChatMessageRequestDto,
-  ): Promise<SendChatMessageResponseDto> {
-    return this.chatService.sendMessage(Number(chatId), request);
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.chatService.sendMessageStream(Number(chatId), request, res);
   }
 }

@@ -120,3 +120,280 @@
     border-top: 1px solid var(--color-border);
   }
 }
+
+/* Agent Progress UI component styles - Global since they are injected via innerHTML */
+.agent-progress{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-4);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin:var(--space-2) 0 var(--space-4) 0;width:min(32rem,100%)}
+.agent-progress__title{margin:0 0 var(--space-2) 0;font-size:var(--font-size-md);font-weight:var(--font-weight-semibold);color:var(--color-text-primary)}
+.agent-progress__steps{display:flex;flex-direction:column;gap:var(--space-2)}
+.agent-progress__step{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);background:var(--color-surface-raised);border:1px solid var(--color-border);font-size:var(--font-size-sm);color:var(--color-text-primary);transition:all var(--duration-fast) var(--ease-out)}
+.agent-progress__step--active{border-color:var(--color-primary);background:color-mix(in srgb,var(--color-primary) 8%,var(--color-surface-raised));font-weight:var(--font-weight-medium);box-shadow:0 0 8px color-mix(in srgb,var(--color-primary) 20%,transparent)}
+.agent-progress__step--done{border-color:#22c55e;background:color-mix(in srgb,#22c55e 8%,var(--color-surface-raised))}
+.agent-progress__badge{display:inline-flex;align-items:center;padding:0.15rem 0.5rem;border-radius:var(--radius-full);font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);text-transform:uppercase}
+.agent-progress__badge--waiting{background:color-mix(in srgb,var(--color-text-muted) 15%,transparent);color:var(--color-text-muted)}
+.agent-progress__badge--running{background:color-mix(in srgb,var(--color-primary) 15%,transparent);color:var(--color-primary);animation:pulse-active 1.5s infinite ease-in-out}
+.agent-progress__badge--done{background:color-mix(in srgb,#22c55e 15%,transparent);color:#22c55e}
+@keyframes pulse-active{0%,100%{opacity:0.8;transform:scale(1)}50%{opacity:1;transform:scale(1.03)}}
+.agent-progress__footer{margin:var(--space-1) 0 0 0;font-size:var(--font-size-sm);font-style:italic;color:var(--color-text-muted)}
+
+/* Agent Graph UI Component Styles */
+.agent-graph {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  margin: var(--space-3) 0 var(--space-5) 0;
+  width: 100%;
+  max-width: 36rem;
+  box-shadow: var(--shadow-md);
+}
+
+.agent-graph__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.agent-graph__nodes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.agent-graph__node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 16rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+
+  &.agent-graph__node--active {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+    font-weight: var(--font-weight-medium);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 25%, transparent);
+
+    .agent-graph__node-dot {
+      background: var(--color-primary);
+      box-shadow: 0 0 6px var(--color-primary);
+      animation: pulse-dot 1.5s infinite ease-in-out;
+    }
+    .agent-graph__node-badge {
+      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      color: var(--color-primary);
+      animation: pulse-badge 1.5s infinite ease-in-out;
+    }
+  }
+
+  &.agent-graph__node--done {
+    border-color: #22c55e;
+    background: color-mix(in srgb, #22c55e 6%, var(--color-surface));
+
+    .agent-graph__node-dot {
+      background: #22c55e;
+    }
+    .agent-graph__node-badge {
+      background: color-mix(in srgb, #22c55e 15%, transparent);
+      color: #22c55e;
+    }
+  }
+
+  &.agent-graph__node--pending {
+    opacity: 0.6;
+    background: var(--color-surface-sunken);
+
+    .agent-graph__node-dot {
+      background: var(--color-text-muted);
+    }
+    .agent-graph__node-badge {
+      background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+      color: var(--color-text-muted);
+    }
+  }
+}
+
+.agent-graph__node-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.agent-graph__node-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.agent-graph__node-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.agent-graph__connector {
+  width: 2px;
+  height: 24px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__split {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.agent-graph__split-line-top {
+  width: 2px;
+  height: 16px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__split-bar {
+  width: 17.5rem;
+  height: 2px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__split-lines-down {
+  display: flex;
+  justify-content: space-between;
+  width: 17.5rem;
+  height: 16px;
+}
+
+.agent-graph__split-line-left,
+.agent-graph__split-line-right {
+  width: 2px;
+  height: 100%;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__line--done {
+    background: #22c55e;
+  }
+  &.agent-graph__line--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__merge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.agent-graph__merge-lines-up {
+  display: flex;
+  justify-content: space-between;
+  width: 17.5rem;
+  height: 16px;
+}
+
+.agent-graph__merge-line-left,
+.agent-graph__merge-line-right {
+  width: 2px;
+  height: 100%;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__line--done {
+    background: #22c55e;
+  }
+  &.agent-graph__line--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__merge-bar {
+  width: 17.5rem;
+  height: 2px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__merge-line-bottom {
+  width: 2px;
+  height: 16px;
+  background: var(--color-border);
+  transition: background var(--duration-normal) var(--ease-out);
+
+  &.agent-graph__connector--done {
+    background: #22c55e;
+  }
+  &.agent-graph__connector--active {
+    background: var(--color-primary);
+  }
+}
+
+.agent-graph__footer {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+

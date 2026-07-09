@@ -1,0 +1,103 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--color-surface-raised);
+  border-right: 1px solid var(--color-border);
+}
+
+.chat__sidebar-header {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chat__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.chat__new,
+.chat__design-system,
+.chat__list-item {
+  font: inherit;
+}
+
+.chat__new,
+.chat__design-system {
+  min-height: var(--space-10);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  text-align: center;
+  text-decoration: none;
+}
+
+.chat__new {
+  cursor: pointer;
+}
+
+.chat__design-system {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-primary-subtle);
+    text-decoration: none;
+  }
+}
+
+.chat__list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.chat__empty-list {
+  margin: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.chat__list-item {
+  width: 100%;
+  min-height: var(--space-10);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface);
+  }
+}
+
+.chat__list-item--active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+@media (max-width: 48rem) {
+  :host {
+    max-height: 14rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}

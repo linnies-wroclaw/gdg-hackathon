@@ -3,6 +3,7 @@ import {
   LlmAgent,
   LoopAgent,
   MCPToolset,
+  ParallelAgent,
   SequentialAgent,
   type StreamableHTTPConnectionParams,
 } from '@google/adk';
@@ -205,7 +206,12 @@ const trizAgent = new LlmAgent({
   outputKey: 'candidate_records',
 });
 
+const parallelSolvers = new ParallelAgent({
+  name: 'parallel_solvers',
+  subAgents: [fiveYSolverAgent, trizAgent],
+});
+
 export const rootAgent = new SequentialAgent({
   name: 'root_agent',
-  subAgents: [problemExtractorAgent, fiveYAgent, fiveYSolverAgent, trizAgent],
+  subAgents: [problemExtractorAgent, fiveYAgent, parallelSolvers],
 });

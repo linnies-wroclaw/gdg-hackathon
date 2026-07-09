@@ -1,41 +1,15 @@
 <div class="chat">
-  <aside class="chat__sidebar" aria-label="Conversations">
-    <div class="chat__sidebar-header">
-      <h1 class="chat__title">Solution system</h1>
-      <button
-        class="chat__new"
-        type="button"
-        [disabled]="chat.pending()"
-        (click)="createChat()"
-      >
-        New chat
-      </button>
-      <a class="chat__design-system" href="/design-system.html">
-        Design system
-      </a>
-    </div>
+  <app-chat-sidebar
+    (chatCreated)="focusInput()"
+    (chatSelected)="focusInput()"
+    (focusComposer)="focusInput()"
+  ></app-chat-sidebar>
 
-    <nav class="chat__list" aria-label="Chat history">
-      @if (chat.chats().length === 0) {
-        <p class="chat__empty-list">No saved chats yet.</p>
-      }
-
-      @for (item of chat.chats(); track item.id) {
-        <button
-          class="chat__list-item"
-          type="button"
-          [class.chat__list-item--active]="item.id === chat.selectedChatId()"
-          [attr.aria-current]="item.id === chat.selectedChatId() ? 'page' : null"
-          [disabled]="chat.pending()"
-          (click)="selectChat(item.id)"
-        >
-          {{ item.title }}
-        </button>
-      }
-    </nav>
-  </aside>
-
-  <section class="chat__panel" aria-label="Selected conversation">
+  <section
+    class="chat__panel"
+    aria-label="Selected conversation"
+    (keydown)="onPanelKeydown($event)"
+  >
     <header class="chat__header">
       <h2 class="chat__panel-title">
         @if (chat.selectedChatId()) {
@@ -59,103 +33,7 @@
           <p class="chat__empty">Ask the agent anything to get started.</p>
         }
         @for (message of chat.messages(); track message.id ?? $index) {
-          <article class="chat__message chat__message--{{ message.role }}">
-            <span class="sr-only">
-              {{ message.role === 'user' ? 'You' : 'Assistant' }}:
-            </span>
-            @if (message.role === 'assistant') {
-              <div
-                class="chat__bubble chat__bubble--markdown markdown-body"
-                [innerHTML]="message.text | markdown"
-              ></div>
-              @if (hasTraceView(message.trace)) {
-                <section class="trace" aria-label="Evaluated solution trace">
-                  <details class="trace__details" open>
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Targeting x Quality map</span>
-                      <span class="trace__summary-note">Gate lines are fixed at X 60 and Y 60.</span>
-                    </summary>
-                    <div class="trace-plane">
-                      <canvas
-                        #planeCanvas
-                        width="520"
-                        height="220"
-                        [attr.data-trace-index]="$index"
-                        aria-label="Candidate XY evaluation chart"
-                      ></canvas>
-                    </div>
-                  </details>
-                  <details class="trace__details">
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Top TRIZ solutions</span>
-                    </summary>
-                    <div class="trace__group">
-                      <div class="trace__cards">
-                        @for (candidate of message.trace.topTrizCandidates; track candidate.record.id) {
-                          <article class="trace-card">
-                            <div class="trace-card__head">
-                              <span class="trace-card__id">{{ candidate.record.id }}</span>
-                              <h4>{{ candidate.record.title }}</h4>
-                            </div>
-                            <p>{{ candidate.record.summary }}</p>
-                            <dl class="trace-card__metrics">
-                              <div>
-                                <dt>X</dt>
-                                <dd>{{ scoreLabel(candidate.x) }}</dd>
-                              </div>
-                              <div>
-                                <dt>Y</dt>
-                                <dd>{{ scoreLabel(candidate.y) }}</dd>
-                              </div>
-                              <div>
-                                <dt>dc</dt>
-                                <dd>{{ percentLabel(candidate.dc) }}</dd>
-                              </div>
-                            </dl>
-                          </article>
-                        }
-                      </div>
-                    </div>
-                  </details>
-
-                  <details class="trace__details">
-                    <summary class="trace__summary">
-                      <span class="trace__heading">Top Five-Whys solutions</span>
-                    </summary>
-                    <div class="trace__group">
-                      <div class="trace__cards">
-                        @for (candidate of message.trace.topFiveYCandidates; track candidate.record.id) {
-                          <article class="trace-card trace-card--fivey">
-                            <div class="trace-card__head">
-                              <span class="trace-card__id">{{ candidate.record.id }}</span>
-                              <h4>{{ candidate.record.title }}</h4>
-                            </div>
-                            <p>{{ candidate.record.summary }}</p>
-                            <dl class="trace-card__metrics">
-                              <div>
-                                <dt>X</dt>
-                                <dd>{{ scoreLabel(candidate.x) }}</dd>
-                              </div>
-                              <div>
-                                <dt>Y</dt>
-                                <dd>{{ scoreLabel(candidate.y) }}</dd>
-                              </div>
-                              <div>
-                                <dt>dc</dt>
-                                <dd>{{ percentLabel(candidate.dc) }}</dd>
-                              </div>
-                            </dl>
-                          </article>
-                        }
-                      </div>
-                    </div>
-                  </details>
-                </section>
-              }
-            } @else {
-              <p class="chat__bubble">{{ message.text }}</p>
-            }
-          </article>
+          <app-chat-message [message]="message"></app-chat-message>
         }
         @if (chat.pending()) {
           <article class="chat__message chat__message--assistant">
@@ -188,6 +66,15 @@
           Send
         </button>
       </form>
+
+      <p class="chat__nav-tip">
+        <strong>Keyboard navigation:</strong>
+        <kbd>Tab</kbd> / <kbd>↑</kbd><kbd>↓</kbd> Sidebar |
+        <kbd>PgUp</kbd><kbd>PgDn</kbd> Skip 5 |
+        <kbd>Home</kbd><kbd>End</kbd> Start/End |
+        <kbd>→</kbd> Focus chat |
+        <kbd>←</kbd> Back to sidebar
+      </p>
     </main>
   </section>
 </div>
