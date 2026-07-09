@@ -8,3 +8,8 @@ This file outlines project-specific rules that coding agents MUST follow when wo
 2. **Three-Tier Tokenization**: Never write raw hex codes or magic values (margins, padding, radii) in component stylesheets. Always use design tokens from the semantic layer (`var(--color-primary)`, `var(--color-border)`, etc.) which references primitives.
 3. **Host Styling**: Style root containers using the host component properties (`host: { class: '...' }`) and the `:host` SCSS selector, rather than wrapping layouts in redundant HTML containers.
 4. **Global Chat Components**: Shared chat UI components (like bubbles, messages, and typing dots) must be maintained globally in `src/styles/components/_chat.scss`.
+
+## Git & Branching Rules
+
+1. **No Direct Commits/Pushes to Main**: Coding agents MUST NEVER commit or push directly to the `main` or `master` branch. All development work and commits must be done on a separate, dedicated feature or bugfix branch (e.g., `feature/branch-name`, `bugfix/branch-name`).
+2. **Branch Creation Policy**: Before creating any commits, check the current branch. If you are on `main` or `master`, create and checkout a new branch first.

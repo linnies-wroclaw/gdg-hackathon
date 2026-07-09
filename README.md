@@ -86,7 +86,7 @@ gdg-hackathon/
 ## 🛠️ Prerequisites
 
 Ensure you have the following installed on your local machine:
-* **Node.js** (v20 or higher) & **npm**
+* **Node.js** (v20 or higher) & **Bun** (v1.1 or higher)
 * **Python** (v3.13 or higher) and **uv** (recommended Python package manager)
 * **Docker** & **Docker Compose**
 * A **Google Gemini API Key** (from [Google AI Studio](https://aistudio.google.com/))
@@ -200,8 +200,8 @@ uv run python app/main.py
 
 ```bash
 cd solution-system/adg-agents
-npm install
-npx adk api_server agent.ts --port 8081 --host 0.0.0.0
+bun install
+bunx adk api_server agent.ts --port 8081 --host 0.0.0.0
 ```
 
 *Listens on `http://localhost:8081`*
@@ -210,7 +210,7 @@ npx adk api_server agent.ts --port 8081 --host 0.0.0.0
 
 ```bash
 cd solution-system
-npx nx serve api
+bunx nx serve api
 ```
 
 *Listens on `http://localhost:3000`*
@@ -219,7 +219,7 @@ npx nx serve api
 
 ```bash
 cd solution-system
-npx nx serve frontend
+bunx nx serve frontend
 ```
 
 *Listens on `http://localhost:4200`*
